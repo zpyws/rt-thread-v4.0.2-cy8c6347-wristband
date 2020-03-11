@@ -11,7 +11,7 @@
 */
 #include "project.h"
 
-int main(void)
+int main_unused(void)
 {
     __enable_irq(); /* Enable global interrupts. */
 
