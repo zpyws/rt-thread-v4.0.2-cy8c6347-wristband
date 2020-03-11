@@ -15,6 +15,9 @@
 #include "drv_usart.h"
 #endif
 
+//by yangwensen@20200311
+#include "project.h"
+
 #ifdef RT_USING_FINSH
 #include <finsh.h>
 static void reboot(uint8_t argc, char **argv)
@@ -132,11 +135,11 @@ RT_WEAK void rt_hw_board_init()
 //    HAL_Init();
 
     /* enable interrupt */
-//    __set_PRIMASK(0);
+    __set_PRIMASK(0);
     /* System clock initialization */
-//    SystemClock_Config();
+    SysTick_Config(SystemCoreClock/RT_TICK_PER_SECOND);
     /* disable interrupt */
-//    __set_PRIMASK(1);
+    __set_PRIMASK(1);
 
     rt_hw_systick_init();
 
