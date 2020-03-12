@@ -1,8 +1,8 @@
 menu "Hardware Drivers Config"
 
-config SOC_STM32F429IG
+config SOC_PSOC6347FMI_BUD53
     bool
-    select SOC_SERIES_STM32F4
+    select SOC_SERIES_PSOC63
     select RT_USING_COMPONENTS_INIT
     select RT_USING_USER_MAIN
     default y
@@ -13,7 +13,7 @@ menu "Onboard Peripheral Drivers"
         bool "Enable USB TO USART (uart1)"
         select BSP_USING_UART
         select BSP_USING_UART1
-        default y
+        default n
 
     config BSP_USING_COM2
         bool "Enable COM2 (uart2 pin conflict with Ethernet and PWM)"
