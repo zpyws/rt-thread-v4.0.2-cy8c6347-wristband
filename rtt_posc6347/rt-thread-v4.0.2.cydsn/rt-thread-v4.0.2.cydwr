@@ -4,7 +4,15 @@
     <Group key="v1" />
   </Group>
   <Data key="DataVersionKey" value="2" />
-  <Group key="DWRInstGuidMapping" />
+  <Group key="DWRInstGuidMapping">
+    <Group key="Clock">
+      <Data key="46d13a80-3295-4230-83ad-26c6bc01d407/b68e5b9d-7828-482d-a282-930f990e3b3e" value="UART6_SCBCLK" />
+    </Group>
+    <Group key="Pin">
+      <Data key="46d13a80-3295-4230-83ad-26c6bc01d407/65f3af6c-759b-4ccb-8c66-5c95ba1f5f4f" value="UART1_tx" />
+      <Data key="46d13a80-3295-4230-83ad-26c6bc01d407/b7e8018e-1ef7-49c0-b5a5-61641a03e31c" value="UART1_rx" />
+    </Group>
+  </Group>
   <Group key="M0S8Clock">
     <Group key="DesigneWideClks">
       <Group key="8AF878A3-9701-44BB-864C-92E241DEEFC9">
@@ -23,6 +31,31 @@
         <Data key="ph_align_clock_name" value="" />
         <Data key="plus_tolerance" value="10" />
         <Data key="scope" value="GLOBAL" />
+        <Data key="sourceClk_minus_acuracy_name" value="2.4" />
+        <Data key="sourceClk_plus_acuracy_name" value="2.4" />
+        <Data key="src_clk_id" value="2FB4EC85-8328-4C5A-9ED9-8B63060178EB" />
+        <Data key="src_clk_name" value="Clk_Peri" />
+        <Data key="start_on_reset" value="True" />
+        <Data key="uses_fract_divider" value="False" />
+      </Group>
+    </Group>
+    <Group key="LocalClks">
+      <Group key="46d13a80-3295-4230-83ad-26c6bc01d407/b68e5b9d-7828-482d-a282-930f990e3b3e">
+        <Data key="check_tolerance" value="True" />
+        <Data key="derive_type" value="AUTO" />
+        <Data key="desired_freq" value="1.3824" />
+        <Data key="desired_unit" value="6" />
+        <Data key="divider" value="36" />
+        <Data key="enabled" value="True" />
+        <Data key="fract_divider_denominator" value="0" />
+        <Data key="fract_divider_numerator" value="0" />
+        <Data key="minus_tolerance" value="5" />
+        <Data key="name" value="UART6_SCBCLK" />
+        <Data key="netlist_name" value="\UART6:SCBCLK\" />
+        <Data key="ph_align_clock_id" value="" />
+        <Data key="ph_align_clock_name" value="" />
+        <Data key="plus_tolerance" value="5" />
+        <Data key="scope" value="LOCAL" />
         <Data key="sourceClk_minus_acuracy_name" value="2.4" />
         <Data key="sourceClk_plus_acuracy_name" value="2.4" />
         <Data key="src_clk_id" value="2FB4EC85-8328-4C5A-9ED9-8B63060178EB" />
@@ -585,6 +618,18 @@
         <Data key="src_clk_id" value="" />
         <Data key="src_clk_name" value="" />
         <Data key="start_on_reset" value="False" />
+      </Group>
+    </Group>
+  </Group>
+  <Group key="Pin2">
+    <Group key="46d13a80-3295-4230-83ad-26c6bc01d407/65f3af6c-759b-4ccb-8c66-5c95ba1f5f4f">
+      <Group key="0">
+        <Data key="Port Format" value="13,1" />
+      </Group>
+    </Group>
+    <Group key="46d13a80-3295-4230-83ad-26c6bc01d407/b7e8018e-1ef7-49c0-b5a5-61641a03e31c">
+      <Group key="0">
+        <Data key="Port Format" value="13,0" />
       </Group>
     </Group>
   </Group>

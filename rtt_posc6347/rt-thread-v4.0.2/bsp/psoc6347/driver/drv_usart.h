@@ -48,16 +48,18 @@ struct cy8c63_uart_config
     struct dma_config *dma_rx;
     struct dma_config *dma_tx;
 #endif
-};
 
-/* stm32 uart dirver class */
-struct cy8c63_uart
-{
-    CySCB_Type *base;
-    const cy_stc_scb_uart_config_t *config;
+    CySCB_Type *uart_base;
+    const cy_stc_scb_uart_config_t *uart_config;
     cy_stc_scb_uart_context_t *context;
     const cy_stc_sysint_t *irq_config;
     void (*isr_handler)(void);
+};
+
+/* cy8c63 uart dirver class */
+struct cy8c63_uart
+{
+    const struct cy8c63_uart_config *config;
     
 #ifdef RT_SERIAL_USING_DMA
     struct
@@ -73,5 +75,4 @@ struct cy8c63_uart
     rt_uint16_t uart_dma_flag;
     struct rt_serial_device serial;
 };
-
 #endif  /* __DRV_USART_H__ */

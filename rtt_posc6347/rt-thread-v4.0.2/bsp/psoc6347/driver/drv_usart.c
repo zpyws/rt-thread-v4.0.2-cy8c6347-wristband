@@ -60,7 +60,12 @@ enum
 #endif
 };
 
-static struct cy8c63_uart_config uart_config[] =
+//by yangwensen@20200313
+#if defined(BSP_USING_UART6)
+void USART6_IRQHandler(void);
+#endif
+
+static const struct cy8c63_uart_config uart_config[] =
 {
 #ifdef BSP_USING_UART1
     UART1_CONFIG,
@@ -92,94 +97,85 @@ static struct cy8c63_uart_config uart_config[] =
 };
 
 static struct cy8c63_uart uart_obj[sizeof(uart_config) / sizeof(uart_config[0])] = {0};
-
-#if 0   //by yangwensen
-static rt_err_t stm32_configure(struct rt_serial_device *serial, struct serial_configure *cfg)
+//*********************************************************************************************************************************************
+//*********************************************************************************************************************************************
+//by yangwensen@20190816
+static rt_err_t cy8c63_configure(struct rt_serial_device *serial, struct serial_configure *cfg)
 {
-    struct stm32_uart *uart;
+    struct cy8c63_uart *uart;
     RT_ASSERT(serial != RT_NULL);
     RT_ASSERT(cfg != RT_NULL);
 
-    uart = rt_container_of(serial, struct stm32_uart, serial);
-
-    uart->handle.Instance          = uart->config->Instance;
-    uart->handle.Init.BaudRate     = cfg->baud_rate;
-    uart->handle.Init.HwFlowCtl    = UART_HWCONTROL_NONE;
-    uart->handle.Init.Mode         = UART_MODE_TX_RX;
-    uart->handle.Init.OverSampling = UART_OVERSAMPLING_16;
+    uart = rt_container_of(serial, struct cy8c63_uart, serial);
+    
     switch (cfg->data_bits)
     {
     case DATA_BITS_8:
-        uart->handle.Init.WordLength = UART_WORDLENGTH_8B;
         break;
     case DATA_BITS_9:
-        uart->handle.Init.WordLength = UART_WORDLENGTH_9B;
         break;
     default:
-        uart->handle.Init.WordLength = UART_WORDLENGTH_8B;
         break;
     }
     switch (cfg->stop_bits)
     {
     case STOP_BITS_1:
-        uart->handle.Init.StopBits   = UART_STOPBITS_1;
         break;
     case STOP_BITS_2:
-        uart->handle.Init.StopBits   = UART_STOPBITS_2;
         break;
     default:
-        uart->handle.Init.StopBits   = UART_STOPBITS_1;
         break;
     }
     switch (cfg->parity)
     {
     case PARITY_NONE:
-        uart->handle.Init.Parity     = UART_PARITY_NONE;
         break;
     case PARITY_ODD:
-        uart->handle.Init.Parity     = UART_PARITY_ODD;
         break;
     case PARITY_EVEN:
-        uart->handle.Init.Parity     = UART_PARITY_EVEN;
         break;
     default:
-        uart->handle.Init.Parity     = UART_PARITY_NONE;
         break;
     }
 
-    if (HAL_UART_Init(&uart->handle) != HAL_OK)
+    if (Cy_SCB_UART_Init(uart->config->uart_base, uart->config->uart_config, uart->config->context) != CY_SCB_UART_SUCCESS)
     {
         return -RT_ERROR;
     }
+    Cy_SCB_UART_Enable(uart->config->uart_base);
 
+    /* Unmasking only the RX fifo not empty interrupt bit */
+    uart->config->uart_base->INTR_RX_MASK = SCB_INTR_RX_MASK_NOT_EMPTY_Msk;
+
+    /* Interrupt Settings for UART */
+    Cy_SysInt_Init(uart->config->irq_config, uart->config->isr_handler);
+
+    /* Enable the interrupt */
+    NVIC_EnableIRQ(uart->config->irq_config->intrSrc);
+    
     return RT_EOK;
 }
 
-static rt_err_t stm32_control(struct rt_serial_device *serial, int cmd, void *arg)
+//by yangwensen@20190816
+static rt_err_t cy8c63_control(struct rt_serial_device *serial, int cmd, void *arg)
 {
-    struct stm32_uart *uart;
+    struct cy8c63_uart *uart;
 #ifdef RT_SERIAL_USING_DMA
     rt_ubase_t ctrl_arg = (rt_ubase_t)arg;
 #endif
 
     RT_ASSERT(serial != RT_NULL);
-    uart = rt_container_of(serial, struct stm32_uart, serial);
+    uart = rt_container_of(serial, struct cy8c63_uart, serial);
 
     switch (cmd)
     {
     /* disable interrupt */
     case RT_DEVICE_CTRL_CLR_INT:
-        /* disable rx irq */
-        NVIC_DisableIRQ(uart->config->irq_type);
-        /* disable interrupt */
-        __HAL_UART_DISABLE_IT(&(uart->handle), UART_IT_RXNE);
+        NVIC_DisableIRQ(uart->config->irq_config->intrSrc);
         break;
     /* enable interrupt */
     case RT_DEVICE_CTRL_SET_INT:
-        /* enable rx irq */
-        NVIC_EnableIRQ(uart->config->irq_type);
-        /* enable interrupt */
-        __HAL_UART_ENABLE_IT(&(uart->handle), UART_IT_RXNE);
+        NVIC_EnableIRQ(uart->config->irq_config->intrSrc);
         break;
 
 #ifdef RT_SERIAL_USING_DMA
@@ -190,9 +186,7 @@ static rt_err_t stm32_control(struct rt_serial_device *serial, int cmd, void *ar
     }
     return RT_EOK;
 }
-#endif
 
-#if 0
 static int cy8c63_putc(struct rt_serial_device *serial, char c)
 {
     struct cy8c63_uart *uart;
@@ -200,40 +194,30 @@ static int cy8c63_putc(struct rt_serial_device *serial, char c)
 
     uart = rt_container_of(serial, struct cy8c63_uart, serial);
 #if defined(SOC_SERIES_CY8C63)
-    Cy_SCB_UART_Put(uart->base, c);
+    Cy_SCB_UART_Put(uart->config->uart_base, c);
 #endif
-    while( !Cy_SCB_UART_IsTxComplete(uart->uart_base) );
+    while( !Cy_SCB_UART_IsTxComplete(uart->config->uart_base) );
     return 1;
 }
-#endif
 
-#if 0
-static int stm32_getc(struct rt_serial_device *serial)
+static int cy8c63_getc(struct rt_serial_device *serial)
 {
     int ch;
-    struct stm32_uart *uart;
+    struct cy8c63_uart *uart;
     RT_ASSERT(serial != RT_NULL);
-    uart = rt_container_of(serial, struct stm32_uart, serial);
+    uart = rt_container_of(serial, struct cy8c63_uart, serial);
 
     ch = -1;
-    if (__HAL_UART_GET_FLAG(&(uart->handle), UART_FLAG_RXNE) != RESET)
-    {
-#if defined(SOC_SERIES_STM32L4) || defined(SOC_SERIES_STM32F7) || defined(SOC_SERIES_STM32F0) \
-    || defined(SOC_SERIES_STM32L0) || defined(SOC_SERIES_STM32G0) || defined(SOC_SERIES_STM32H7) \
-    || defined(SOC_SERIES_STM32G4)
-        ch = uart->handle.Instance->RDR & 0xff;
-#else
-        ch = uart->handle.Instance->DR & 0xff;
-#endif
-    }
+    ch = Cy_SCB_UART_Get(uart->config->uart_base);
     return ch;
 }
 
-static rt_size_t stm32_dma_transmit(struct rt_serial_device *serial, rt_uint8_t *buf, rt_size_t size, int direction)
+static rt_size_t cy8c63_dma_transmit(struct rt_serial_device *serial, rt_uint8_t *buf, rt_size_t size, int direction)
 {
-    struct stm32_uart *uart;
+    struct cy8c63_uart *uart;
     RT_ASSERT(serial != RT_NULL);
-    uart = rt_container_of(serial, struct stm32_uart, serial);
+    uart = rt_container_of(serial, struct cy8c63_uart, serial);
+    (void)uart;
     
     if (size == 0)
     {
@@ -242,6 +226,7 @@ static rt_size_t stm32_dma_transmit(struct rt_serial_device *serial, rt_uint8_t 
     
     if (RT_SERIAL_DMA_TX == direction)
     {
+#if 0
         if (HAL_UART_Transmit_DMA(&uart->handle, buf, size) == HAL_OK)
         {
             return size;
@@ -250,17 +235,18 @@ static rt_size_t stm32_dma_transmit(struct rt_serial_device *serial, rt_uint8_t 
         {
             return 0;
         }
+#endif
     }
     return 0;
 }
 
-static const struct rt_uart_ops stm32_uart_ops =
+static const struct rt_uart_ops cy8c63_uart_ops =
 {
-    .configure = stm32_configure,
-    .control = stm32_control,
-    .putc = stm32_putc,
-    .getc = stm32_getc,
-    .dma_transmit = stm32_dma_transmit
+    .configure = cy8c63_configure,
+    .control = cy8c63_control,
+    .putc = cy8c63_putc,
+    .getc = cy8c63_getc,
+    .dma_transmit = cy8c63_dma_transmit
 };
 
 /**
@@ -270,21 +256,23 @@ static const struct rt_uart_ops stm32_uart_ops =
  */
 static void uart_isr(struct rt_serial_device *serial)
 {
-    struct stm32_uart *uart;
+    struct cy8c63_uart *uart;
 #ifdef RT_SERIAL_USING_DMA
     rt_size_t recv_total_index, recv_len;
     rt_base_t level;
 #endif
 
     RT_ASSERT(serial != RT_NULL);
-    uart = rt_container_of(serial, struct stm32_uart, serial);
+    uart = rt_container_of(serial, struct cy8c63_uart, serial);
 
-    /* UART in mode Receiver -------------------------------------------------*/
-    if ((__HAL_UART_GET_FLAG(&(uart->handle), UART_FLAG_RXNE) != RESET) &&
-            (__HAL_UART_GET_IT_SOURCE(&(uart->handle), UART_IT_RXNE) != RESET))
+    /* Check for "RX fifo not empty interrupt" */
+    if((uart->config->uart_base->INTR_RX_MASKED & SCB_INTR_RX_MASKED_NOT_EMPTY_Msk ) != 0)
     {
+        /* Clear UART "RX fifo not empty interrupt" */
+        uart->config->uart_base->INTR_RX = uart->config->uart_base->INTR_RX & SCB_INTR_RX_NOT_EMPTY_Msk;
         rt_hw_serial_isr(serial, RT_SERIAL_EVENT_RX_IND);
     }
+    
 #ifdef RT_SERIAL_USING_DMA
     else if ((uart->uart_dma_flag) && (__HAL_UART_GET_FLAG(&(uart->handle), UART_FLAG_IDLE) != RESET)
              && (__HAL_UART_GET_IT_SOURCE(&(uart->handle), UART_IT_IDLE) != RESET))
@@ -313,49 +301,6 @@ static void uart_isr(struct rt_serial_device *serial)
         }
     }
 #endif
-    else
-    {
-        if (__HAL_UART_GET_FLAG(&(uart->handle), UART_FLAG_ORE) != RESET)
-        {
-            __HAL_UART_CLEAR_OREFLAG(&uart->handle);
-        }
-        if (__HAL_UART_GET_FLAG(&(uart->handle), UART_FLAG_NE) != RESET)
-        {
-            __HAL_UART_CLEAR_NEFLAG(&uart->handle);
-        }
-        if (__HAL_UART_GET_FLAG(&(uart->handle), UART_FLAG_FE) != RESET)
-        {
-            __HAL_UART_CLEAR_FEFLAG(&uart->handle);
-        }
-        if (__HAL_UART_GET_FLAG(&(uart->handle), UART_FLAG_PE) != RESET)
-        {
-            __HAL_UART_CLEAR_PEFLAG(&uart->handle);
-        }
-#if !defined(SOC_SERIES_STM32L4) && !defined(SOC_SERIES_STM32F7) && !defined(SOC_SERIES_STM32F0) \
-    && !defined(SOC_SERIES_STM32L0) && !defined(SOC_SERIES_STM32G0) && !defined(SOC_SERIES_STM32H7) \
-    && !defined(SOC_SERIES_STM32G4)
-        if (__HAL_UART_GET_FLAG(&(uart->handle), UART_FLAG_LBD) != RESET)
-        {
-            UART_INSTANCE_CLEAR_FUNCTION(&(uart->handle), UART_FLAG_LBD);
-        }
-#endif
-        if (__HAL_UART_GET_FLAG(&(uart->handle), UART_FLAG_CTS) != RESET)
-        {
-            UART_INSTANCE_CLEAR_FUNCTION(&(uart->handle), UART_FLAG_CTS);
-        }
-        if (__HAL_UART_GET_FLAG(&(uart->handle), UART_FLAG_TXE) != RESET)
-        {
-            UART_INSTANCE_CLEAR_FUNCTION(&(uart->handle), UART_FLAG_TXE);
-        }
-        if (__HAL_UART_GET_FLAG(&(uart->handle), UART_FLAG_TC) != RESET)
-        {
-            UART_INSTANCE_CLEAR_FUNCTION(&(uart->handle), UART_FLAG_TC);
-        }
-        if (__HAL_UART_GET_FLAG(&(uart->handle), UART_FLAG_RXNE) != RESET)
-        {
-            UART_INSTANCE_CLEAR_FUNCTION(&(uart->handle), UART_FLAG_RXNE);
-        }
-    }
 }
 
 #ifdef RT_SERIAL_USING_DMA
@@ -885,7 +830,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 }
 #endif  /* RT_SERIAL_USING_DMA */
 
-static void stm32_uart_get_dma_config(void)
+static void cy8c63_uart_get_dma_config(void)
 {
 #ifdef BSP_USING_UART1
     uart_obj[UART1_INDEX].uart_dma_flag = 0;
@@ -972,20 +917,18 @@ static void stm32_uart_get_dma_config(void)
 #endif
 }
 
-#endif  //by yangwensen
 int rt_hw_usart_init(void)
 {
-//    rt_size_t obj_num = sizeof(uart_obj) / sizeof(struct stm32_uart);
-//    struct serial_configure config = RT_SERIAL_CONFIG_DEFAULT;
+    rt_size_t obj_num = sizeof(uart_obj) / sizeof(struct cy8c63_uart);
+    struct serial_configure config = RT_SERIAL_CONFIG_DEFAULT;
     rt_err_t result = 0;
-#if 0
 
-    stm32_uart_get_dma_config();
+    cy8c63_uart_get_dma_config();
 
-    for (int i = 0; i < obj_num; i++)
+    for (rt_size_t i = 0; i < obj_num; i++)
     {
         uart_obj[i].config = &uart_config[i];
-        uart_obj[i].serial.ops    = &stm32_uart_ops;
+        uart_obj[i].serial.ops    = &cy8c63_uart_ops;
         uart_obj[i].serial.config = config;
         /* register UART device */
         result = rt_hw_serial_register(&uart_obj[i].serial, uart_obj[i].config->name,
@@ -996,7 +939,7 @@ int rt_hw_usart_init(void)
                                        , NULL);
         RT_ASSERT(result == RT_EOK);
     }
-#endif
+    
     return result;
 }
 

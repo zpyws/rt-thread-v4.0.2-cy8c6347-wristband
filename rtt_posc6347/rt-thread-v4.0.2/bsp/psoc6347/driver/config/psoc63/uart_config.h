@@ -64,6 +64,11 @@ extern "C" {
 #define UART6_CONFIG                                                \
     {                                                               \
         .name = "uart6",                                            \
+        .uart_base = UART6_HW,                                      \
+        .uart_config = &UART6_config,                               \
+        .context = &UART6_context,                                  \
+        .irq_config = &UART6_SCB_IRQ_cfg,                           \
+        .isr_handler = USART6_IRQHandler,                           \
     }
 #endif /* UART6_CONFIG */
 #endif /* BSP_USING_UART6 */
