@@ -20,6 +20,7 @@ extern "C" {
 
 #if defined(SOC_SERIES_CY8C63)
 #include "config/psoc63/uart_config.h"
+#include "config/psoc63/qspi_config.h"
 #elif defined(SOC_SERIES_STM32F1)
 #include "f1/dma_config.h"
 #include "f1/uart_config.h"
