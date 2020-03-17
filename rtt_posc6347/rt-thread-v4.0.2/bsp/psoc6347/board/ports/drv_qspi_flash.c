@@ -65,13 +65,12 @@ static int rt_hw_qspi_flash_with_sfud_init(void)
 {
     cy8c63_qspi_bus_attach_device("qspi1", "qspi10", RT_NULL, 4, n25qxxa_enter_qspi_mode, RT_NULL);
 
-#if 0
     /* init n25qxx */
     if (RT_NULL == rt_sfud_flash_probe(FAL_USING_NOR_FLASH_DEV_NAME, "qspi10"))
     {
         return -RT_ERROR;
     }
-#endif
+
     return RT_EOK;
 }
 INIT_COMPONENT_EXPORT(rt_hw_qspi_flash_with_sfud_init);

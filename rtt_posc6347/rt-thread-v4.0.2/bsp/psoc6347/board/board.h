@@ -30,7 +30,7 @@ extern "C" {
 #if defined(__CC_ARM) || defined(__CLANG_ARM)
 extern int Image$$RW_IRAM1$$ZI$$Limit;
 //#define HEAP_BEGIN      (&Image$$RW_IRAM1$$ZI$$Limit)
-#define HEAP_BEGIN      (CY8C63_SRAM_END-10L*1024L)
+#define HEAP_BEGIN      (CY8C63_SRAM_END-64L*1024L)
 #elif __ICCARM__
 #pragma section="CSTACK"
 #define HEAP_BEGIN      (__segment_end("CSTACK"))
