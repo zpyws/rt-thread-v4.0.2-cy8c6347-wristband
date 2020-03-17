@@ -63,7 +63,7 @@ void n25qxxa_enter_qspi_mode(struct rt_qspi_device *device)
 
 static int rt_hw_qspi_flash_with_sfud_init(void)
 {
-    stm32_qspi_bus_attach_device("qspi1", "qspi10", RT_NULL, 4, n25qxxa_enter_qspi_mode, RT_NULL);
+    cy8c63_qspi_bus_attach_device("qspi1", "qspi10", RT_NULL, 4, n25qxxa_enter_qspi_mode, RT_NULL);
 
 #if 0
     /* init n25qxx */

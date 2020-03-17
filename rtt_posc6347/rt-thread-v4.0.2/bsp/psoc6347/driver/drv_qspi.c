@@ -20,7 +20,7 @@
 
 #if defined(BSP_USING_QSPI)
 
-struct stm32_hw_spi_cs
+struct cy8c63_hw_spi_cs
 {
     uint16_t Pin;
 };
@@ -46,7 +46,7 @@ typedef struct
     cy_stc_smif_context_t const *context;
 }QSPI_CommandTypeDef;
 
-struct stm32_qspi_bus
+struct cy8c63_qspi_bus
 {
     QSPI_HandleTypeDef QSPI_Handler;
     
@@ -57,11 +57,9 @@ struct stm32_qspi_bus
 };
 
 struct rt_spi_bus _qspi_bus1;
-struct stm32_qspi_bus _stm32_qspi_bus;
+struct cy8c63_qspi_bus _cy8c63_qspi_bus;
 
-cy_stc_smif_context_t smifContext;      //by yangwensen@20200316
-uint8_t MLC=0x08;                       /* Sets max latency for memory read at 100 MHz*/                   
-uint8_t RLC=0x03;                       /* Sets max latency for register read at 100 MHz*/
+//cy_smif_event_cb_t RxCmpltCallback;
                                          /* Refer to QSPI F-RAM (CY15x104QSN)datasheet for details*/  
 
 /*******************************************************************************
@@ -74,10 +72,10 @@ uint8_t RLC=0x03;                       /* Sets max latency for register read at
 *******************************************************************************/
 void ExtMemInterrupt(void)
 {
-    Cy_SMIF_Interrupt(SMIF0, &smifContext);
+    Cy_SMIF_Interrupt(QSPI1_HW, &QSPI1_context);
 }
 
-static int stm32_qspi_init(struct rt_qspi_device *device, struct rt_qspi_configuration *qspi_cfg)
+static int cy8c63_qspi_init(struct rt_qspi_device *device, struct rt_qspi_configuration *qspi_cfg)
 {
     cy_en_sysint_status_t intrStatus;
     cy_en_smif_status_t smifStatus;
@@ -86,7 +84,7 @@ static int stm32_qspi_init(struct rt_qspi_device *device, struct rt_qspi_configu
     RT_ASSERT(qspi_cfg != RT_NULL);
 
     struct rt_spi_configuration *cfg = &qspi_cfg->parent;
-    struct stm32_qspi_bus *qspi_bus = device->parent.bus->parent.user_data;
+    struct cy8c63_qspi_bus *qspi_bus = device->parent.bus->parent.user_data;
     rt_memset(&qspi_bus->QSPI_Handler, 0, sizeof(qspi_bus->QSPI_Handler));
 
     QSPI_HandleTypeDef QSPI_Handler_config = QSPI_BUS_CONFIG;
@@ -130,17 +128,17 @@ static int stm32_qspi_init(struct rt_qspi_device *device, struct rt_qspi_configu
         LOG_D("SMIF interrupt is initialized\n");
         
     /* SMIF initialization */
-    smifStatus = Cy_SMIF_Init(SMIF0, &qspi_bus->QSPI_Handler.spicfg, TIMEOUT_1_MS, &smifContext);  /* SMIF initialization */ 
+    smifStatus = Cy_SMIF_Init(QSPI1_HW, &qspi_bus->QSPI_Handler.spicfg, TIMEOUT_1_MS, &QSPI1_context);  /* SMIF initialization */ 
     if(smifStatus)
         LOG_E("SMIF initialization failed (%d)!\n", intrStatus);
     else
         LOG_D("SMIF is initialized\n");
 
-    Cy_SMIF_SetDataSelect(SMIF0, CY_SMIF_SLAVE_SELECT_0, CY_SMIF_DATA_SEL0);/* SMIF data select for FRAM slave */
+    Cy_SMIF_SetDataSelect(QSPI1_HW, CY_SMIF_SLAVE_SELECT_0, CY_SMIF_DATA_SEL0);/* SMIF data select for FRAM slave */
 
-    Cy_SMIF_Enable(SMIF0, &smifContext);  /* Enables the operation of the SMIF block. */
+    Cy_SMIF_Enable(QSPI1_HW, &QSPI1_context);  /* Enables the operation of the SMIF block. */
 
-    SMIF_EnableInt(); /* Enable the SMIF interrupt */
+//    SMIF_EnableInt(); /* Enable the SMIF interrupt */
 
     LOG_I("SMIF initialization finished\r\n");    
 
@@ -178,22 +176,21 @@ static int stm32_qspi_init(struct rt_qspi_device *device, struct rt_qspi_configu
     return RT_EOK;
 }
 
-static void qspi_send_cmd(struct stm32_qspi_bus *qspi_bus, struct rt_qspi_message *message)
+static void qspi_send_cmd(struct cy8c63_qspi_bus *qspi_bus, struct rt_qspi_message *message)
 {
     RT_ASSERT(qspi_bus != RT_NULL);
     RT_ASSERT(message != RT_NULL);
 
     QSPI_CommandTypeDef Cmdhandler;
     cy_en_smif_txfr_width_t cmd_width = CY_SMIF_WIDTH_SINGLE;
-    cy_en_smif_txfr_width_t addr_width;
 
     /* set QSPI cmd struct */
-    Cmdhandler.base = SMIF0;
+    Cmdhandler.base = QSPI1_HW;
     Cmdhandler.cmd = message->instruction.content;
     Cmdhandler.cmdParam = (uint8_t *)(&message->address.content);        //todo by yangwensen
     Cmdhandler.slaveSelect = CY_SMIF_SLAVE_SELECT_0;
     Cmdhandler.cmpltTxfr = TX_NOT_LAST_BYTE;
-    Cmdhandler.context = &smifContext;
+    Cmdhandler.context = &QSPI1_context;
 
     if (message->instruction.qspi_lines == 0)
     {
@@ -215,25 +212,25 @@ static void qspi_send_cmd(struct stm32_qspi_bus *qspi_bus, struct rt_qspi_messag
     
     if (message->address.qspi_lines == 0)
     {
-        addr_width = CY_SMIF_WIDTH_SINGLE;
+        Cmdhandler.paramTxfrWidth = (cy_en_smif_txfr_width_t)CY_SMIF_CMD_WITHOUT_PARAM;
+        Cmdhandler.cmdParam = CY_SMIF_CMD_WITHOUT_PARAM;
     }
     else if (message->address.qspi_lines == 1)
     {
-        addr_width = CY_SMIF_WIDTH_SINGLE;
+        Cmdhandler.paramTxfrWidth = CY_SMIF_WIDTH_SINGLE;
     }
     else if (message->address.qspi_lines == 2)
     {
-        addr_width = CY_SMIF_WIDTH_DUAL;
+        Cmdhandler.paramTxfrWidth = CY_SMIF_WIDTH_DUAL;
     }
     else if (message->address.qspi_lines == 4)
     {
-        addr_width = CY_SMIF_WIDTH_QUAD;
+        Cmdhandler.paramTxfrWidth = CY_SMIF_WIDTH_QUAD;
     }
-    Cmdhandler.paramTxfrWidth = addr_width;
     
     if (message->address.size == 0)
     {
-        Cmdhandler.paramSize = CMD_WITHOUT_PARAM;
+        Cmdhandler.paramSize = CY_SMIF_CMD_WITHOUT_PARAM;
     }
     else if (message->address.size == 24)
     {
@@ -280,7 +277,7 @@ static rt_uint32_t qspixfer(struct rt_spi_device *device, struct rt_spi_message 
     RT_ASSERT(device->bus != RT_NULL);
 
     struct rt_qspi_message *qspi_message = (struct rt_qspi_message *)message;
-    struct stm32_qspi_bus *qspi_bus = device->bus->parent.user_data;
+    struct cy8c63_qspi_bus *qspi_bus = device->bus->parent.user_data;
 #ifdef BSP_QSPI_USING_SOFTCS
     struct stm32_hw_spi_cs *cs = device->parent.user_data;
 #endif
@@ -288,6 +285,8 @@ static rt_uint32_t qspixfer(struct rt_spi_device *device, struct rt_spi_message 
     const rt_uint8_t *sndb = message->send_buf;
     rt_uint8_t *rcvb = message->recv_buf;
     rt_int32_t length = message->length;
+    cy_en_smif_txfr_width_t data_width;
+    cy_en_smif_status_t status;
 
 #ifdef BSP_QSPI_USING_SOFTCS
     if (message->cs_take)
@@ -296,24 +295,43 @@ static rt_uint32_t qspixfer(struct rt_spi_device *device, struct rt_spi_message 
     }
 #endif
 
+    if (qspi_message->qspi_data_lines == 0)
+    {
+       data_width = CY_SMIF_WIDTH_SINGLE;
+    }
+    else if (qspi_message->qspi_data_lines == 1)
+    {
+       data_width = CY_SMIF_WIDTH_SINGLE;
+    }
+    else if (qspi_message->qspi_data_lines == 2)
+    {
+       data_width = CY_SMIF_WIDTH_DUAL;    
+    }
+    else if (qspi_message->qspi_data_lines == 4)
+    {
+       data_width = CY_SMIF_WIDTH_QUAD;   
+    }
+
     /* send data */
     if (sndb)
     {
         qspi_send_cmd(qspi_bus, qspi_message);
         if (qspi_message->parent.length != 0)
         {
-        #if 0
-            if (HAL_QSPI_Transmit(&qspi_bus->QSPI_Handler, (rt_uint8_t *)sndb, 5000) == HAL_OK)
+            status =  Cy_SMIF_TransmitDataBlocking(QSPI1_HW, 
+                            (rt_uint8_t *)sndb,
+                            length, 
+                            data_width, 
+                            &QSPI1_context);
+            if(status == CY_SMIF_SUCCESS)
             {
                 len = length;
             }
             else
             {
-                LOG_E("QSPI send data failed(%d)!", qspi_bus->QSPI_Handler.ErrorCode);
-                qspi_bus->QSPI_Handler.State = HAL_QSPI_STATE_READY;
+                LOG_E("QSPI send data failed(%d)!", status);
                 goto __exit;
             }
-        #endif
         }
         else
         {
@@ -327,8 +345,17 @@ static rt_uint32_t qspixfer(struct rt_spi_device *device, struct rt_spi_message 
 #ifdef BSP_QSPI_USING_DMA
         if (HAL_QSPI_Receive_DMA(&qspi_bus->QSPI_Handler, rcvb) == HAL_OK)
 #else
-//        if (HAL_QSPI_Receive(&qspi_bus->QSPI_Handler, rcvb, 5000) == HAL_OK)
-        if (1)
+    #if 0
+        status =  Cy_SMIF_ReceiveData(QSPI1_HW,
+                            rcvb, 					
+                            length, 
+                            data_width, 
+                            RxCmpltCallback,
+                            &smifContext);
+    #endif
+        status = Cy_SMIF_ReceiveDataBlocking(QSPI1_HW, rcvb, length, data_width, &QSPI1_context);
+        
+        if(status ==CY_SMIF_SUCCESS )
 #endif
         {
             len = length;
@@ -338,8 +365,7 @@ static rt_uint32_t qspixfer(struct rt_spi_device *device, struct rt_spi_message 
         }
         else
         {
-//            LOG_E("QSPI recv data failed(%d)!", qspi_bus->QSPI_Handler.ErrorCode);
-//            qspi_bus->QSPI_Handler.State = HAL_QSPI_STATE_READY;
+            LOG_E("QSPI recv data failed(%d)!", status);
             goto __exit;
         }
     }
@@ -360,22 +386,22 @@ static rt_err_t qspi_configure(struct rt_spi_device *device, struct rt_spi_confi
     RT_ASSERT(configuration != RT_NULL);
 
     struct rt_qspi_device *qspi_device = (struct rt_qspi_device *)device;
-    return stm32_qspi_init(qspi_device, &qspi_device->config);
+    return cy8c63_qspi_init(qspi_device, &qspi_device->config);
 }
 
-static const struct rt_spi_ops stm32_qspi_ops =
+static const struct rt_spi_ops cy8c63_qspi_ops =
 {
     .configure = qspi_configure,
     .xfer = qspixfer,
 };
 
-static int stm32_qspi_register_bus(struct stm32_qspi_bus *qspi_bus, const char *name)
+static int cy8c63_qspi_register_bus(struct cy8c63_qspi_bus *qspi_bus, const char *name)
 {
     RT_ASSERT(qspi_bus != RT_NULL);
     RT_ASSERT(name != RT_NULL);
 
     _qspi_bus1.parent.user_data = qspi_bus;
-    return rt_qspi_bus_register(&_qspi_bus1, name, &stm32_qspi_ops);
+    return rt_qspi_bus_register(&_qspi_bus1, name, &cy8c63_qspi_ops);
 }
 
 /**
@@ -388,10 +414,10 @@ static int stm32_qspi_register_bus(struct stm32_qspi_bus *qspi_bus, const char *
   * @retval 0 : success
   *        -1 : failed
   */
-rt_err_t stm32_qspi_bus_attach_device(const char *bus_name, const char *device_name, rt_uint32_t pin, rt_uint8_t data_line_width, void (*enter_qspi_mode)(), void (*exit_qspi_mode)())
+rt_err_t cy8c63_qspi_bus_attach_device(const char *bus_name, const char *device_name, rt_uint32_t pin, rt_uint8_t data_line_width, void (*enter_qspi_mode)(), void (*exit_qspi_mode)())
 {
     struct rt_qspi_device *qspi_device = RT_NULL;
-    struct stm32_hw_spi_cs *cs_pin = RT_NULL;
+    struct cy8c63_hw_spi_cs *cs_pin = RT_NULL;
     rt_err_t result = RT_EOK;
 
     RT_ASSERT(bus_name != RT_NULL);
@@ -405,7 +431,7 @@ rt_err_t stm32_qspi_bus_attach_device(const char *bus_name, const char *device_n
         result = RT_ENOMEM;
         goto __exit;
     }
-    cs_pin = (struct stm32_hw_spi_cs *)rt_malloc(sizeof(struct stm32_hw_spi_cs));
+    cs_pin = (struct cy8c63_hw_spi_cs *)rt_malloc(sizeof(struct cy8c63_hw_spi_cs));
     if (qspi_device == RT_NULL)
     {
         LOG_E("no memory, qspi bus attach device failed!");
@@ -468,7 +494,7 @@ void QSPI_DMA_IRQHandler(void)
 
 static int rt_hw_qspi_bus_init(void)
 {
-    return stm32_qspi_register_bus(&_stm32_qspi_bus, "qspi1");
+    return cy8c63_qspi_register_bus(&_cy8c63_qspi_bus, "qspi1");
 }
 INIT_BOARD_EXPORT(rt_hw_qspi_bus_init);
 
