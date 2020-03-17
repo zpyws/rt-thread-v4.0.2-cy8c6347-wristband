@@ -27,7 +27,7 @@ extern "C" {
 #define SMIF_PRIORITY       (1u)
     
 #define TIMEOUT_1_MS              (1000ul)  /* 1 ms timeout for all blocking functions */
-#define SMIF_EnableInt()   NVIC_EnableIRQ((IRQn_Type)smif_interrupt_IRQn)
+#define SMIF_EnableInt()            NVIC_EnableIRQ(QSPI1_SMIF_IRQ_cfg.intrSrc)
 #define TX_NOT_LAST_BYTE          (0u)   	/* Not the last byte in command transmission */
 #define CY_SMIF_CMD_WITHOUT_PARAM  (0U)    /**< No parameter */
 

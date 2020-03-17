@@ -121,14 +121,14 @@ static int cy8c63_qspi_init(struct rt_qspi_device *device, struct rt_qspi_config
 //    result = HAL_QSPI_Init(&qspi_bus->QSPI_Handler);
     
     /* Initializes the referenced interrupt. */
-    intrStatus = Cy_SysInt_Init(&qspi_bus->QSPI_Handler.intcfg, ExtMemInterrupt);
+    intrStatus = Cy_SysInt_Init(&QSPI1_SMIF_IRQ_cfg, ExtMemInterrupt);
     if(intrStatus)
         LOG_E("SMIF interrupt initialization failed (%d)!\n", intrStatus);
     else
         LOG_D("SMIF interrupt is initialized\n");
         
     /* SMIF initialization */
-    smifStatus = Cy_SMIF_Init(QSPI1_HW, &qspi_bus->QSPI_Handler.spicfg, TIMEOUT_1_MS, &QSPI1_context);  /* SMIF initialization */ 
+    smifStatus = Cy_SMIF_Init(QSPI1_HW, &QSPI1_config, TIMEOUT_1_MS, &QSPI1_context);  /* SMIF initialization */ 
     if(smifStatus)
         LOG_E("SMIF initialization failed (%d)!\n", intrStatus);
     else
@@ -138,7 +138,7 @@ static int cy8c63_qspi_init(struct rt_qspi_device *device, struct rt_qspi_config
 
     Cy_SMIF_Enable(QSPI1_HW, &QSPI1_context);  /* Enables the operation of the SMIF block. */
 
-//    SMIF_EnableInt(); /* Enable the SMIF interrupt */
+    NVIC_EnableIRQ(QSPI1_SMIF_IRQ_cfg.intrSrc);
 
     LOG_I("SMIF initialization finished\r\n");    
 
