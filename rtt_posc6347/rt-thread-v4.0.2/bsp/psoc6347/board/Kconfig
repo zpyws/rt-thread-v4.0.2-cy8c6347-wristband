@@ -10,7 +10,7 @@ config SOC_CY8C6347FMI_BUD53
 menu "Onboard Peripheral Drivers"
 
     config BSP_USING_QSPI_FLASH
-        bool "Enable QSPI FLASH (N25Q128A qspi1)"
+        bool "Enable QSPI FLASH (GD25LQ128D qspi1)"
         select BSP_USING_QSPI
         select RT_USING_SFUD
         select RT_SFUD_USING_QSPI
