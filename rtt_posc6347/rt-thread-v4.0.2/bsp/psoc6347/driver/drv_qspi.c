@@ -60,8 +60,6 @@ struct rt_spi_bus _qspi_bus1;
 struct cy8c63_qspi_bus _cy8c63_qspi_bus;
 
 //cy_smif_event_cb_t RxCmpltCallback;
-                                         /* Refer to QSPI F-RAM (CY15x104QSN)datasheet for details*/  
-
 /*******************************************************************************
 * Function Name: ExtMemInterrupt
 ****************************************************************************//**
@@ -101,18 +99,14 @@ static int cy8c63_qspi_init(struct rt_qspi_device *device, struct rt_qspi_config
         }
     }
 #endif
-    /* 80/(1+i) */
-//    qspi_bus->QSPI_Handler.Init.ClockPrescaler = i;
 
     if (!(cfg->mode & RT_SPI_CPOL))
     {
         /* QSPI MODE0 */
-//        qspi_bus->QSPI_Handler.Init.ClockMode = QSPI_CLOCK_MODE_0;
     }
     else
     {
         /* QSPI MODE3 */
-//        qspi_bus->QSPI_Handler.Init.ClockMode = QSPI_CLOCK_MODE_3;
     }
 
     /* flash size */
