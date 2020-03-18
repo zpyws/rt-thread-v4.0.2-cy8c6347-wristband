@@ -73,6 +73,12 @@
 
 /* Device virtual file system */
 
+#define RT_USING_DFS
+#define DFS_USING_WORKDIR
+#define DFS_FILESYSTEMS_MAX 2
+#define DFS_FILESYSTEM_TYPES_MAX 2
+#define DFS_FD_MAX 16
+#define RT_USING_DFS_DEVFS
 
 /* Device Drivers */
 
@@ -80,6 +86,7 @@
 #define RT_PIPE_BUFSZ 512
 #define RT_USING_SERIAL
 #define RT_SERIAL_RB_BUFSZ 64
+#define RT_USING_MTD_NOR
 #define RT_USING_SPI
 #define RT_USING_QSPI
 #define RT_USING_SFUD
@@ -154,6 +161,14 @@
 #define FAL_USING_NOR_FLASH_DEV_NAME "norflash0"
 #define PKG_USING_FAL_V00400
 #define PKG_FAL_VER_NUM 0x00400
+#define PKG_USING_LITTLEFS
+#define PKG_USING_LITTLEFS_V205
+#define LFS_READ_SIZE 256
+#define LFS_PROG_SIZE 256
+#define LFS_BLOCK_SIZE 4096
+#define LFS_CACHE_SIZE 256
+#define LFS_BLOCK_CYCLES 0
+#define LFS_LOOKAHEAD_MAX 128
 
 /* peripheral libraries and drivers */
 
@@ -172,6 +187,7 @@
 /* Onboard Peripheral Drivers */
 
 #define BSP_USING_QSPI_FLASH
+#define BSP_MOUNT_QSPI_WITH_LFS
 
 /* On-chip Peripheral Drivers */
 
