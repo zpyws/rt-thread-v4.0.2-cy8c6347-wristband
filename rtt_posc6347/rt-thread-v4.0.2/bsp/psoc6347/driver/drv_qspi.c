@@ -183,8 +183,11 @@ static void qspi_send_cmd(struct cy8c63_qspi_bus *qspi_bus, struct rt_qspi_messa
     Cmdhandler.cmd = message->instruction.content;
     Cmdhandler.cmdParam = (uint8_t *)(&message->address.content);        //todo by yangwensen
     Cmdhandler.slaveSelect = CY_SMIF_SLAVE_SELECT_0;
-    Cmdhandler.cmpltTxfr = TX_NOT_LAST_BYTE;
     Cmdhandler.context = &QSPI1_context;
+    if(message->parent.length)
+        Cmdhandler.cmpltTxfr = TX_NOT_LAST_BYTE;
+    else
+        Cmdhandler.cmpltTxfr = TX_LAST_BYTE;
 
     if (message->instruction.qspi_lines == 0)
     {
