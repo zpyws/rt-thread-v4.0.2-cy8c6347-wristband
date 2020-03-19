@@ -208,7 +208,7 @@ rt_err_t rt_qspi_send(struct rt_qspi_device *device, const void *send_buf, rt_si
         else if (length >= 4)
         {
             /* address size is 3 Byte */
-            message.address.content = (ptr[1] << 16) | (ptr[2] << 8) | (ptr[3]);
+            message.address.content = (ptr[1] << 16) | ((ptr[2]&0xfful) << 8) | (ptr[3]);
             message.address.size = 24;
             message.address.qspi_lines = 1;
             count += 3;
