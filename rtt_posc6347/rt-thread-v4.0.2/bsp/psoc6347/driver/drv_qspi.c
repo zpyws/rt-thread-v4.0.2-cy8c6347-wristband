@@ -177,13 +177,19 @@ static void qspi_send_cmd(struct cy8c63_qspi_bus *qspi_bus, struct rt_qspi_messa
 
     QSPI_CommandTypeDef Cmdhandler;
     cy_en_smif_txfr_width_t cmd_width = CY_SMIF_WIDTH_SINGLE;
+    uint8_t addr[3];
 
     /* set QSPI cmd struct */
     Cmdhandler.base = QSPI1_HW;
     Cmdhandler.cmd = message->instruction.content;
-    Cmdhandler.cmdParam = (uint8_t *)(&message->address.content);        //todo by yangwensen
     Cmdhandler.slaveSelect = CY_SMIF_SLAVE_SELECT_0;
     Cmdhandler.context = &QSPI1_context;
+    
+    addr[0] = (uint8_t)(message->address.content >> 16);
+    addr[1] = (uint8_t)(message->address.content >> 8);
+    addr[2] = (uint8_t)(message->address.content >> 0);
+    Cmdhandler.cmdParam = addr;
+    
     if(message->parent.length)
         Cmdhandler.cmpltTxfr = TX_NOT_LAST_BYTE;
     else
