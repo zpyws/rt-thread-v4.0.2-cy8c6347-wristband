@@ -14,13 +14,13 @@
 #include <drv_common.h>
 #include <board.h>
 
-#define __STM32_PORT(port)  GPIO##port##_BASE
+#define __CY8C_PORT(port)  GPIO_PRT##port
 
-#define GET_PIN(PORTx,PIN) (rt_base_t)((16 * ( ((rt_base_t)__STM32_PORT(PORTx) - (rt_base_t)GPIOA_BASE)/(0x0400UL) )) + PIN)
+#define GET_PIN(PORTx,PIN) (rt_base_t)((PORTx<<3) + PIN)
 
-#define __STM32_PIN(index, gpio, gpio_index)                                \
+#define __CY8C_PIN(index, gpio, gpio_index)                                 \
     {                                                                       \
-        index, GPIO##gpio, GPIO_PIN_##gpio_index                            \
+        index, GPIO_PRT##gpio, gpio_index                                   \
     }
 
 #define __STM32_PIN_RESERVE                                                 \
@@ -28,18 +28,20 @@
         -1, 0, 0                                                            \
     }
 
-/* STM32 GPIO driver */
+#define __CY8C_PORT_INT_MAP__(port)     {port, ioss_interrupts_gpio_##port##_IRQn}
+    
+/* cy8c GPIO driver */
 struct pin_index
 {
     int index;
-    int *gpio;
-    uint32_t pin;
+    GPIO_PRT_Type *gpio;
+    uint8_t pin;
 };
 
-struct pin_irq_map
+struct port_irq_map
 {
-    rt_uint16_t pinbit;
-    int irqno;
+    rt_uint8_t portbit;
+    IRQn_Type irqno;
 };
 
 int rt_hw_pin_init(void);
