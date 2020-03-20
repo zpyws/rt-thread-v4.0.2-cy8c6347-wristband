@@ -18,6 +18,8 @@
       <Data key="26a270ef-d524-4a8f-8147-304cf639fca7/edc0faa3-b278-4948-8fa6-a53df6d18272" value="QSPI1_spi_data_0" />
       <Data key="46d13a80-3295-4230-83ad-26c6bc01d407/65f3af6c-759b-4ccb-8c66-5c95ba1f5f4f" value="UART6_tx" />
       <Data key="46d13a80-3295-4230-83ad-26c6bc01d407/b7e8018e-1ef7-49c0-b5a5-61641a03e31c" value="UART6_rx" />
+      <Data key="d28a5938-7af9-4e97-afe8-5446b6b9b869/2aab8a93-e7dd-4bd4-8210-42652cd079c5" value="GSENSOR_COMPASS_I2C_sda" />
+      <Data key="d28a5938-7af9-4e97-afe8-5446b6b9b869/69c3b5e8-b094-4d65-b96b-9f4f3a9a8641" value="GSENSOR_COMPASS_I2C_scl" />
     </Group>
   </Group>
   <Group key="M0S8Clock">
@@ -691,6 +693,16 @@
     <Group key="46d13a80-3295-4230-83ad-26c6bc01d407/b7e8018e-1ef7-49c0-b5a5-61641a03e31c">
       <Group key="0">
         <Data key="Port Format" value="13,0" />
+      </Group>
+    </Group>
+    <Group key="d28a5938-7af9-4e97-afe8-5446b6b9b869/2aab8a93-e7dd-4bd4-8210-42652cd079c5">
+      <Group key="0">
+        <Data key="Port Format" value="0,3" />
+      </Group>
+    </Group>
+    <Group key="d28a5938-7af9-4e97-afe8-5446b6b9b869/69c3b5e8-b094-4d65-b96b-9f4f3a9a8641">
+      <Group key="0">
+        <Data key="Port Format" value="0,2" />
       </Group>
     </Group>
   </Group>
