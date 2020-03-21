@@ -41,6 +41,8 @@
 #endif
 #include <rtdbg.h>
 
+#define I2CM_TIMEOUT                    0
+
 //by yangwensen@20200320
 enum
 {
@@ -83,126 +85,123 @@ static const struct cy8c63_i2c_config i2c_config[] =
 
 static struct cy8c63_i2c i2c_obj[sizeof(i2c_config) / sizeof(i2c_config[0])] = {0};
 
-static int cy8c63_i2c_read(rt_uint32_t i2c_periph, rt_uint16_t slave_address, rt_uint8_t* p_buffer, rt_uint16_t data_byte)
+struct cy8c_i2c_bus
 {
-#if 0
+    struct rt_i2c_bus_device parent;
+    struct rt_i2c_msg *msg;
+};
+
+//by yangwensen@20200321
+static int cy8c63_i2c_read(struct cy8c63_i2c *i2c, rt_uint16_t addr, rt_uint8_t* buff, rt_uint16_t len)
+{
+    cy_en_scb_i2c_status_t status;
+    rt_uint16_t i;
+    int result = 0;
+    
+    if(len==0)
+        return -1;
+    
     /* wait until I2C bus is idle */
-    while(i2c_flag_get(i2c_periph, I2C_FLAG_I2CBSY));
+    while( Cy_SCB_I2C_IsBusBusy(i2c->config->i2c_base) );
 
     /* send a start condition to I2C bus */
-    i2c_start_on_bus(i2c_periph);
-
-    /* wait until SBSEND bit is set */
-    while(!i2c_flag_get(i2c_periph, I2C_FLAG_SBSEND));
-
-    /* send slave address to I2C bus */
-    i2c_master_addressing(i2c_periph, slave_address<<1, I2C_RECEIVER);
-
-    /* wait until ADDSEND bit is set */
-    while(!i2c_flag_get(i2c_periph, I2C_FLAG_ADDSEND));
-
-    /* clear the ADDSEND bit */
-    i2c_flag_clear(i2c_periph,I2C_FLAG_ADDSEND);
-
-    if(1 == data_byte){
-        /* disable acknowledge */
-        i2c_ack_config(i2c_periph,I2C_ACK_DISABLE);
-        /* send a stop condition to I2C bus */
-        i2c_stop_on_bus(i2c_periph);
+    status = Cy_SCB_I2C_MasterSendStart(i2c->config->i2c_base, addr, CY_SCB_I2C_READ_XFER, I2CM_TIMEOUT, i2c->config->context);
+    if(status!=CY_SCB_I2C_SUCCESS)
+    {
+        result = -2;
+        LOG_E("[Y]send start condition & slave addr|RD error:%d", status);
+        goto I2C_READ_ERROR;
     }
 
-    /* while there is data to be read */
-    while(data_byte)
+    len--;
+    for(i=0; i<len; i++)
     {
-        /* wait until the RBNE bit is set and clear it */
-        if(i2c_flag_get(i2c_periph, I2C_FLAG_RBNE))
+        status = Cy_SCB_I2C_MasterReadByte(i2c->config->i2c_base, CY_SCB_I2C_ACK, buff, I2CM_TIMEOUT, i2c->config->context);
+        if(status!=CY_SCB_I2C_SUCCESS)
         {
-            /* read a byte from the EEPROM */
-            *p_buffer = i2c_data_receive(i2c_periph);
-
-            /* point to the next location where the byte read will be saved */
-            p_buffer++; 
-
-            /* decrement the read bytes counter */
-            data_byte--;
-            if(1 == data_byte)
-            {
-                /* disable acknowledge */
-                i2c_ack_config(i2c_periph,I2C_ACK_DISABLE);
-                /* send a stop condition to I2C bus */
-                i2c_stop_on_bus(i2c_periph);
-            }
+            result = -3;
+            LOG_E("[Y]read byte error:%d", status);
+            goto I2C_READ_ERROR;
         }
+        buff++;
     }
-
-    /* wait until the stop condition is finished */
-    while(I2C_CTL0(i2c_periph)&0x0200);
-
-    /* enable acknowledge */
-    i2c_ack_config(i2c_periph,I2C_ACK_ENABLE);
-
-    i2c_ackpos_config(i2c_periph,I2C_ACKPOS_CURRENT);
-#endif
-
-    return 0;
+    
+    status = Cy_SCB_I2C_MasterReadByte(i2c->config->i2c_base, CY_SCB_I2C_NAK, buff, I2CM_TIMEOUT, i2c->config->context);
+    if(status!=CY_SCB_I2C_SUCCESS)
+    {
+        result = -4;
+        LOG_E("[Y]read last byte error:%d", status);
+        goto I2C_READ_ERROR;
+    }
+    
+I2C_READ_ERROR:
+    status = Cy_SCB_I2C_MasterSendStop(i2c->config->i2c_base, I2CM_TIMEOUT, i2c->config->context);
+    if(status!=CY_SCB_I2C_SUCCESS)
+    {
+        result = -5;
+        LOG_E("[Y]generate stop condition error:%d", status);
+    }
+    
+    return result;
 }
 
-static int cy8c63_i2c_write(rt_uint32_t i2c_periph, uint16_t slave_address, uint8_t* p_buffer, uint16_t data_byte)
+//by yangwensen@20200321
+static int cy8c63_i2c_write(struct cy8c63_i2c *i2c, uint16_t addr, uint8_t* buff, uint16_t len)
 {
-#if 0
+    cy_en_scb_i2c_status_t status;
+    rt_uint16_t i;
+    int result = 0;
+    
+    if(len==0)
+        return -1;
+    
     /* wait until I2C bus is idle */
-    while(i2c_flag_get(i2c_periph, I2C_FLAG_I2CBSY));
+    while( Cy_SCB_I2C_IsBusBusy(i2c->config->i2c_base) );
 
     /* send a start condition to I2C bus */
-    i2c_start_on_bus(i2c_periph);
-
-    /* wait until SBSEND bit is set */
-    while(!i2c_flag_get(i2c_periph, I2C_FLAG_SBSEND));
-
-    /* send slave address to I2C bus */
-    i2c_master_addressing(i2c_periph, slave_address<<1, I2C_TRANSMITTER);
-
-    /* wait until ADDSEND bit is set */
-    while(!i2c_flag_get(i2c_periph, I2C_FLAG_ADDSEND));
-
-    /* clear the ADDSEND bit */
-    i2c_flag_clear(i2c_periph,I2C_FLAG_ADDSEND);
-
-    /* wait until the transmit data buffer is empty */
-    while(SET != i2c_flag_get( i2c_periph , I2C_FLAG_TBE));
-
-    /* while there is data to be read */
-    while(data_byte)
+    status = Cy_SCB_I2C_MasterSendStart(i2c->config->i2c_base, addr, CY_SCB_I2C_WRITE_XFER, I2CM_TIMEOUT, i2c->config->context);
+    if(status!=CY_SCB_I2C_SUCCESS)
     {
-        i2c_data_transmit(i2c_periph, *p_buffer);
-
-        /* point to the next byte to be written */
-        p_buffer++;
-
-        /* decrement the write bytes counter */
-        data_byte --;
-
-        /* wait until BTC bit is set */
-        while(!i2c_flag_get(i2c_periph, I2C_FLAG_BTC));
+        result = -2;
+        LOG_E("[Y]send start condition & slave addr|WR error:%d", status);
+        goto I2C_WRITE_ERROR;
     }
 
-        /* send a stop condition to I2C bus */
-    i2c_stop_on_bus(i2c_periph);
-
-    /* wait until the stop condition is finished */
-    while(I2C_CTL0(i2c_periph)&0x0200);
-#endif
-
-    return 0;
+    for(i=0; i<len; i++)
+    {
+        status = Cy_SCB_I2C_MasterWriteByte(i2c->config->i2c_base, *buff, I2CM_TIMEOUT, i2c->config->context);
+        if(status!=CY_SCB_I2C_SUCCESS)
+        {
+            result = -3;
+            LOG_E("[Y]write byte error:%d", status);
+            goto I2C_WRITE_ERROR;
+        }
+        buff++;
+    }
+    
+I2C_WRITE_ERROR:
+    status = Cy_SCB_I2C_MasterSendStop(i2c->config->i2c_base, I2CM_TIMEOUT, i2c->config->context);
+    if(status!=CY_SCB_I2C_SUCCESS)
+    {
+        result = -5;
+        LOG_E("[Y]generate stop condition error:%d", status);
+    }
+    
+    return result;
 }
 
-static rt_size_t cy8c63_i2c_xfer(struct rt_i2c_bus_device *bus, struct rt_i2c_msg msgs[], rt_uint32_t num)
+//by yangwensen@20200320
+static rt_size_t cy8c63_i2c_mst_xfer(struct rt_i2c_bus_device *bus, struct rt_i2c_msg msgs[], rt_uint32_t num)
 {
     struct rt_i2c_msg *msg;
     rt_uint32_t i;
     rt_err_t ret = RT_ERROR;
+    int result;
+    
+    struct cy8c63_i2c *i2c = &i2c_obj[0];
+//    i2c = rt_container_of(serial, struct cy8c63_uart, i2c);
 
-//    struct gd32_i2c_bus *gd32_i2c = (struct gd32_i2c_bus *)bus;
+//    struct cy8c_i2c_bus *cy8c_i2c = (struct cy8c_i2c_bus *)bus;
 
     for (i = 0; i < num; i++)
     {
@@ -210,41 +209,39 @@ static rt_size_t cy8c63_i2c_xfer(struct rt_i2c_bus_device *bus, struct rt_i2c_ms
 
         if (msg->flags & RT_I2C_ADDR_10BIT)
         {
-//            i2c_mode_addr_config(gd32_i2c->i2c_periph,I2C_I2CMODE_ENABLE,I2C_ADDFORMAT_10BITS,0);
         }
         else
         {
-//            i2c_mode_addr_config(gd32_i2c->i2c_periph,I2C_I2CMODE_ENABLE,I2C_ADDFORMAT_7BITS,0);
         }
+        
         if (msg->flags & RT_I2C_RD)
         {
-//            if (gd32_i2c_read(gd32_i2c->i2c_periph, msg->addr, msg->buf, msg->len) != 0)
+            result = cy8c63_i2c_read(i2c, msg->addr, msg->buf, msg->len);
+            if(result)
             {
-                LOG_E("i2c bus write failed,i2c bus stop!");
-                goto out;
+                LOG_E("i2c bus write failed,i2c bus stop[%d]!", result);
+                break;
             }
         }
         else
         {
-//            if (gd32_i2c_write(gd32_i2c->i2c_periph, msg->addr, msg->buf, msg->len) != 0)
+            result = cy8c63_i2c_write(i2c, msg->addr, msg->buf, msg->len);
+            if (result)
             {
-                LOG_E("i2c bus write failed,i2c bus stop!");
-                goto out;
+                LOG_E("i2c bus write failed,i2c bus stop[%d]!", result);
+                break;
             }
         }
     }
     
     ret = i;
 
-out:
-    LOG_E("send stop condition\n");
-
     return ret;
 }
 
 static const struct rt_i2c_bus_device_ops cy8c63_i2c_ops =
 { 
-    cy8c63_i2c_xfer,
+    cy8c63_i2c_mst_xfer,
     RT_NULL,
     RT_NULL
 };

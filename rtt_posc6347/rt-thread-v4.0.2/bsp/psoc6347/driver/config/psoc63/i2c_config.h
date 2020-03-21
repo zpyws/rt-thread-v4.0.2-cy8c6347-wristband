@@ -15,6 +15,7 @@ extern "C" {
         .name = "i2c1",                                             \
         .i2c_base = GSENSOR_COMPASS_I2C_HW,                         \
         .irq_config = &GSENSOR_COMPASS_I2C_SCB_IRQ_cfg,             \
+        .context = &GSENSOR_COMPASS_I2C_context,    	            \
 		.i2c_init = GSENSOR_COMPASS_I2C_Start,						\
     }
 #endif 
