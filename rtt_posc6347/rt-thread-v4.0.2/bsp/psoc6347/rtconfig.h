@@ -90,6 +90,8 @@
 #define RT_I2C_DEBUG
 #define RT_USING_PIN
 #define RT_USING_MTD_NOR
+#define RT_USING_RTC
+#define RT_USING_ALARM
 #define RT_USING_SPI
 #define RT_USING_QSPI
 #define RT_USING_SFUD
@@ -104,7 +106,8 @@
 
 /* POSIX layer and C standard library */
 
-#define RT_LIBC_USING_TIME
+#define RT_USING_LIBC
+#define RT_USING_POSIX
 
 /* Network */
 
@@ -201,6 +204,8 @@
 #define BSP_USING_QSPI
 #define BSP_USING_I2C
 #define BSP_USING_I2C1
+#define BSP_USING_ONCHIP_RTC
+#define BSP_RTC_USING_LSE
 
 /* Board extended module Drivers */
 
