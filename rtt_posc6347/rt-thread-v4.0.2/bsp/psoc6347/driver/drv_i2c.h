@@ -31,7 +31,7 @@ struct cy8c63_i2c_config
 
 	CySCB_Type *i2c_base;
 	const cy_stc_sysint_t* irq_config;
-	void (*isr_handler)(void);
+//	void (*isr_handler)(void);
     cy_stc_scb_i2c_context_t *context;
     
 	void (*i2c_init)(void);

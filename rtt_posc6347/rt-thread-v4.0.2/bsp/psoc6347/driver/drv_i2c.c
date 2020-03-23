@@ -109,7 +109,7 @@ static int cy8c63_i2c_read(struct cy8c63_i2c *i2c, rt_uint16_t addr, rt_uint8_t*
     if(status!=CY_SCB_I2C_SUCCESS)
     {
         result = -2;
-        LOG_E("[Y]send start condition & slave addr|RD error:%d", status);
+        LOG_E("[Y]send start condition & slave addr|RD error:%d", status&~(CY_SCB_ID | CY_PDL_STATUS_ERROR | CY_SCB_I2C_ID));
         goto I2C_READ_ERROR;
     }
 
@@ -120,7 +120,7 @@ static int cy8c63_i2c_read(struct cy8c63_i2c *i2c, rt_uint16_t addr, rt_uint8_t*
         if(status!=CY_SCB_I2C_SUCCESS)
         {
             result = -3;
-            LOG_E("[Y]read byte error:%d", status);
+            LOG_E("[Y]read byte error:%d", status&~(CY_SCB_ID | CY_PDL_STATUS_ERROR | CY_SCB_I2C_ID));
             goto I2C_READ_ERROR;
         }
         buff++;
@@ -130,7 +130,7 @@ static int cy8c63_i2c_read(struct cy8c63_i2c *i2c, rt_uint16_t addr, rt_uint8_t*
     if(status!=CY_SCB_I2C_SUCCESS)
     {
         result = -4;
-        LOG_E("[Y]read last byte error:%d", status);
+        LOG_E("[Y]read last byte error:%d", status&~(CY_SCB_ID | CY_PDL_STATUS_ERROR | CY_SCB_I2C_ID));
         goto I2C_READ_ERROR;
     }
     
@@ -139,7 +139,7 @@ I2C_READ_ERROR:
     if(status!=CY_SCB_I2C_SUCCESS)
     {
         result = -5;
-        LOG_E("[Y]generate stop condition error:%d", status);
+        LOG_E("[Y]generate stop condition error:%d", status&~(CY_SCB_ID | CY_PDL_STATUS_ERROR | CY_SCB_I2C_ID));
     }
     
     return result;
@@ -163,7 +163,7 @@ static int cy8c63_i2c_write(struct cy8c63_i2c *i2c, uint16_t addr, uint8_t* buff
     if(status!=CY_SCB_I2C_SUCCESS)
     {
         result = -2;
-        LOG_E("[Y]send start condition & slave addr|WR error:%d", status);
+        LOG_E("[Y]send start condition & slave addr|WR error:%d", status&~(CY_SCB_ID | CY_PDL_STATUS_ERROR | CY_SCB_I2C_ID));
         goto I2C_WRITE_ERROR;
     }
 
@@ -173,7 +173,7 @@ static int cy8c63_i2c_write(struct cy8c63_i2c *i2c, uint16_t addr, uint8_t* buff
         if(status!=CY_SCB_I2C_SUCCESS)
         {
             result = -3;
-            LOG_E("[Y]write byte error:%d", status);
+            LOG_E("[Y]write byte error:%d", status&~(CY_SCB_ID | CY_PDL_STATUS_ERROR | CY_SCB_I2C_ID));
             goto I2C_WRITE_ERROR;
         }
         buff++;
@@ -184,7 +184,7 @@ I2C_WRITE_ERROR:
     if(status!=CY_SCB_I2C_SUCCESS)
     {
         result = -5;
-        LOG_E("[Y]generate stop condition error:%d", status);
+        LOG_E("[Y]generate stop condition error:%d", status&~(CY_SCB_ID | CY_PDL_STATUS_ERROR | CY_SCB_I2C_ID));
     }
     
     return result;
@@ -198,10 +198,8 @@ static rt_size_t cy8c63_i2c_mst_xfer(struct rt_i2c_bus_device *bus, struct rt_i2
     rt_err_t ret = RT_ERROR;
     int result;
     
-    struct cy8c63_i2c *i2c = &i2c_obj[0];
-//    i2c = rt_container_of(serial, struct cy8c63_uart, i2c);
-
-//    struct cy8c_i2c_bus *cy8c_i2c = (struct cy8c_i2c_bus *)bus;
+    struct cy8c63_i2c *i2c;
+    i2c = rt_container_of(bus, struct cy8c63_i2c, i2c);
 
     for (i = 0; i < num; i++)
     {
