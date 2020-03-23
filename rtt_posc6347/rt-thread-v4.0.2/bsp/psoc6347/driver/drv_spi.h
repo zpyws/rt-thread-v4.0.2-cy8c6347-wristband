@@ -17,17 +17,17 @@
 #include <drv_common.h>
 //#include "drv_dma.h"
 
-//rt_err_t rt_hw_spi_device_attach(const char *bus_name, const char *device_name, GPIO_TypeDef* cs_gpiox, uint16_t cs_gpio_pin);
+rt_err_t rt_hw_spi_device_attach(const char *bus_name, const char *device_name, GPIO_PRT_Type *cs_gpiox, uint16_t cs_gpio_pin);
 
 struct cy8c63_hw_spi_cs
 {
-//    GPIO_TypeDef* GPIOx;
+    GPIO_PRT_Type* GPIOx;
     uint16_t GPIO_Pin;
 };
 
 struct cy8c63_spi_config
 {
-//    SPI_TypeDef *Instance;
+    CySCB_Type *base;
     void (*init)(void);
     
     char *bus_name;

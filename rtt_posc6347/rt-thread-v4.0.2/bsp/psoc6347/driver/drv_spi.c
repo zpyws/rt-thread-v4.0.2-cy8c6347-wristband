@@ -143,7 +143,7 @@ static rt_err_t cy8c63_spi_init(struct cy8c63_spi *spi_drv, struct rt_spi_config
 //        spi_handle->Init.NSS = SPI_NSS_SOFT;
     }
 
-    uint32_t SPI_APB_CLOCK;
+//    uint32_t SPI_APB_CLOCK;
 
 #if defined(SOC_SERIES_STM32F0) || defined(SOC_SERIES_STM32G0)
     SPI_APB_CLOCK = HAL_RCC_GetPCLK1Freq();
@@ -210,20 +210,16 @@ static rt_err_t cy8c63_spi_init(struct cy8c63_spi *spi_drv, struct rt_spi_config
 #endif
 
     spi_drv->config->init();
-//    if (HAL_SPI_Init(spi_handle) != HAL_OK)
-    {
-        return RT_EIO;
-    }
 
 #if defined(SOC_SERIES_STM32L4) || defined(SOC_SERIES_STM32F0) \
         || defined(SOC_SERIES_STM32F7) || defined(SOC_SERIES_STM32G0)
     SET_BIT(spi_handle->Instance->CR2, SPI_RXFIFO_THRESHOLD_HF);
 #endif
 
-#if 0
     /* DMA configuration */
     if (spi_drv->spi_dma_flag & SPI_USING_RX_DMA_FLAG)
     {
+#if 0
         HAL_DMA_Init(&spi_drv->dma.handle_rx);
 
         __HAL_LINKDMA(&spi_drv->handle, hdmarx, spi_drv->dma.handle_rx);
@@ -231,10 +227,12 @@ static rt_err_t cy8c63_spi_init(struct cy8c63_spi *spi_drv, struct rt_spi_config
         /* NVIC configuration for DMA transfer complete interrupt */
         HAL_NVIC_SetPriority(spi_drv->config->dma_rx->dma_irq, 0, 0);
         HAL_NVIC_EnableIRQ(spi_drv->config->dma_rx->dma_irq);
+#endif
     }
 
     if (spi_drv->spi_dma_flag & SPI_USING_TX_DMA_FLAG)
     {
+#if 0
         HAL_DMA_Init(&spi_drv->dma.handle_tx);
 
         __HAL_LINKDMA(&spi_drv->handle, hdmatx, spi_drv->dma.handle_tx);
@@ -242,15 +240,14 @@ static rt_err_t cy8c63_spi_init(struct cy8c63_spi *spi_drv, struct rt_spi_config
         /* NVIC configuration for DMA transfer complete interrupt */
         HAL_NVIC_SetPriority(spi_drv->config->dma_tx->dma_irq, 0, 1);
         HAL_NVIC_EnableIRQ(spi_drv->config->dma_tx->dma_irq);
-    }
-
-    __HAL_SPI_ENABLE(spi_handle);
 #endif
+    }
 
     LOG_D("%s init done", spi_drv->config->bus_name);
     return RT_EOK;
 }
 
+//by yangwensen@20200323
 static rt_uint32_t spixfer(struct rt_spi_device *device, struct rt_spi_message *message)
 {
     int state;
@@ -265,12 +262,11 @@ static rt_uint32_t spixfer(struct rt_spi_device *device, struct rt_spi_message *
     RT_ASSERT(message != RT_NULL);
 
     struct cy8c63_spi *spi_drv =  rt_container_of(device->bus, struct cy8c63_spi, spi_bus);
-//    int *spi_handle = &spi_drv->handle;
     struct cy8c63_hw_spi_cs *cs = device->parent.user_data;
 
-    if (message->cs_take)
+    if ((message->cs_take)&&(cs->GPIOx))
     {
-//        HAL_GPIO_WritePin(cs->GPIOx, cs->GPIO_Pin, GPIO_PIN_RESET);
+        Cy_GPIO_Write(cs->GPIOx, cs->GPIO_Pin, 0);
     }
 
     LOG_D("%s transfer prepare and start", spi_drv->config->bus_name);
@@ -304,40 +300,37 @@ static rt_uint32_t spixfer(struct rt_spi_device *device, struct rt_spi_message *
         /* start once data exchange in DMA mode */
         if (message->send_buf && message->recv_buf)
         {
-        #if 0
             if ((spi_drv->spi_dma_flag & SPI_USING_TX_DMA_FLAG) && (spi_drv->spi_dma_flag & SPI_USING_RX_DMA_FLAG))
             {
-                state = HAL_SPI_TransmitReceive_DMA(spi_handle, (uint8_t *)send_buf, (uint8_t *)recv_buf, send_length);
+//                state = HAL_SPI_TransmitReceive_DMA(spi_handle, (uint8_t *)send_buf, (uint8_t *)recv_buf, send_length);
             }
             else
             {
-                state = HAL_SPI_TransmitReceive(spi_handle, (uint8_t *)send_buf, (uint8_t *)recv_buf, send_length, 1000);
+                Cy_SCB_SPI_WriteArrayBlocking(spi_drv->config->base, (uint8_t *)send_buf, send_length);
+                state = (Cy_SCB_SPI_ReadArray(spi_drv->config->base, (uint8_t *)recv_buf, send_length)==send_length) ? 0 : 1;
             }
-        #endif
         }
         else if (message->send_buf)
         {
-        #if 0
             if (spi_drv->spi_dma_flag & SPI_USING_TX_DMA_FLAG)
             {
-                state = HAL_SPI_Transmit_DMA(spi_handle, (uint8_t *)send_buf, send_length);
+//                state = HAL_SPI_Transmit_DMA(spi_handle, (uint8_t *)send_buf, send_length);
             }
             else
             {
-                state = HAL_SPI_Transmit(spi_handle, (uint8_t *)send_buf, send_length, 1000);
+                Cy_SCB_SPI_WriteArrayBlocking(spi_drv->config->base, (uint8_t *)send_buf, send_length);
             }
-        #endif
         }
         else
         {
             memset((uint8_t *)recv_buf, 0xff, send_length);
-            if (0)//(spi_drv->spi_dma_flag & SPI_USING_RX_DMA_FLAG)
+            if (spi_drv->spi_dma_flag & SPI_USING_RX_DMA_FLAG)
             {
 //                state = HAL_SPI_Receive_DMA(spi_handle, (uint8_t *)recv_buf, send_length);
             }
             else
             {
-//                state = HAL_SPI_Receive(spi_handle, (uint8_t *)recv_buf, send_length, 1000);
+                state = (Cy_SCB_SPI_ReadArray(spi_drv->config->base, (uint8_t *)recv_buf, send_length)==send_length) ? 0 : 1;
             }
         }
 
@@ -345,7 +338,6 @@ static rt_uint32_t spixfer(struct rt_spi_device *device, struct rt_spi_message *
         {
             LOG_I("spi transfer error : %d", state);
             message->length = 0;
-//            spi_handle->State = HAL_SPI_STATE_READY;
         }
         else
         {
@@ -355,12 +347,11 @@ static rt_uint32_t spixfer(struct rt_spi_device *device, struct rt_spi_message *
         /* For simplicity reasons, this example is just waiting till the end of the
            transfer, but application may perform other tasks while transfer operation
            is ongoing. */
-//        while (HAL_SPI_GetState(spi_handle) != HAL_SPI_STATE_READY);
     }
 
-    if (message->cs_release)
+    if ((message->cs_take)&&(cs->GPIOx))
     {
-//        HAL_GPIO_WritePin(cs->GPIOx, cs->GPIO_Pin, GPIO_PIN_SET);
+        Cy_GPIO_Write(cs->GPIOx, cs->GPIO_Pin, 1);
     }
 
     return message->length;
@@ -391,7 +382,6 @@ static int rt_hw_spi_bus_init(void)
     {
         spi_bus_obj[i].config = &spi_config[i];
         spi_bus_obj[i].spi_bus.parent.user_data = (void *)(&spi_config[i]);
-//        spi_bus_obj[i].handle.Instance = spi_config[i].Instance;
 
         if (spi_bus_obj[i].spi_dma_flag & SPI_USING_RX_DMA_FLAG)
         {
@@ -484,14 +474,14 @@ static int rt_hw_spi_bus_init(void)
 /**
   * Attach the spi device to SPI bus, this function must be used after initialization.
   */
-rt_err_t rt_hw_spi_device_attach(const char *bus_name, const char *device_name, uint8_t *cs_gpiox, uint16_t cs_gpio_pin)
+rt_err_t rt_hw_spi_device_attach(const char *bus_name, const char *device_name, GPIO_PRT_Type *cs_gpiox, uint16_t cs_gpio_pin)
 {
     RT_ASSERT(bus_name != RT_NULL);
     RT_ASSERT(device_name != RT_NULL);
 
     rt_err_t result;
     struct rt_spi_device *spi_device;
-    struct stm32_hw_spi_cs *cs_pin;
+    struct cy8c63_hw_spi_cs *cs_pin;
 
 #if 0
     /* initialize the cs pin && select the slave*/
@@ -503,15 +493,15 @@ rt_err_t rt_hw_spi_device_attach(const char *bus_name, const char *device_name, 
     HAL_GPIO_Init(cs_gpiox, &GPIO_Initure);
     HAL_GPIO_WritePin(cs_gpiox, cs_gpio_pin, GPIO_PIN_SET);
 
+#endif
     /* attach the device to spi bus*/
     spi_device = (struct rt_spi_device *)rt_malloc(sizeof(struct rt_spi_device));
     RT_ASSERT(spi_device != RT_NULL);
-    cs_pin = (struct stm32_hw_spi_cs *)rt_malloc(sizeof(struct stm32_hw_spi_cs));
+    cs_pin = (struct cy8c63_hw_spi_cs *)rt_malloc(sizeof(struct cy8c63_hw_spi_cs));
     RT_ASSERT(cs_pin != RT_NULL);
     cs_pin->GPIOx = cs_gpiox;
     cs_pin->GPIO_Pin = cs_gpio_pin;
     result = rt_spi_bus_attach_device(spi_device, device_name, bus_name, (void *)cs_pin);
-#endif
 
     if (result != RT_EOK)
     {

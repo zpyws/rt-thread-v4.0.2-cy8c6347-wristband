@@ -91,6 +91,7 @@ extern "C" {
 #define SPI3_BUS_CONFIG                             \
     {                                               \
         .bus_name = "spi3",                         \
+        .base = SCB3,                               \
         .init = SPI3_Start,                         \
     }
 #endif /* SPI3_BUS_CONFIG */
