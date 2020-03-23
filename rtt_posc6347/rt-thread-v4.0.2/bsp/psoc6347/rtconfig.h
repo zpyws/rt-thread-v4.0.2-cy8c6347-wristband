@@ -196,6 +196,8 @@
 
 #define BSP_USING_UART
 #define BSP_USING_UART6
+#define BSP_USING_SPI
+#define BSP_USING_SPI3
 #define BSP_USING_QSPI
 #define BSP_USING_I2C
 #define BSP_USING_I2C1

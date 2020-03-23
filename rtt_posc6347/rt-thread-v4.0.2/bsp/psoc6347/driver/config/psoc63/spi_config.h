@@ -90,8 +90,8 @@ extern "C" {
 #ifndef SPI3_BUS_CONFIG
 #define SPI3_BUS_CONFIG                             \
     {                                               \
-        .Instance = SPI3,                           \
         .bus_name = "spi3",                         \
+        .init = SPI3_Start,                         \
     }
 #endif /* SPI3_BUS_CONFIG */
 #endif /* BSP_USING_SPI3 */
