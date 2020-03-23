@@ -196,6 +196,21 @@ menu "On-chip Peripheral Drivers"
                 select BSP_SPI2_TX_USING_DMA
                 default n
                 
+            config BSP_USING_SPI3
+                bool "Enable SPI3 BUS"
+                default n
+
+            config BSP_SPI3_TX_USING_DMA
+                bool "Enable SPI3 TX DMA"
+                depends on BSP_USING_SPI3
+                default n
+                
+            config BSP_SPI3_RX_USING_DMA
+                bool "Enable SPI3 RX DMA"
+                depends on BSP_USING_SPI3
+                select BSP_SPI3_TX_USING_DMA
+                default n
+
             config BSP_USING_SPI5
                 bool "Enable SPI5 BUS"
                 default n        
