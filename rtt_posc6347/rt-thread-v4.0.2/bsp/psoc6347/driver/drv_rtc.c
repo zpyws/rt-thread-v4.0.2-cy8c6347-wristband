@@ -42,6 +42,7 @@ static rt_err_t set_rtc_time_stamp(time_t time_stamp)
 {
     struct tm *p_tm;
     cy_stc_rtc_config_t t = {0};
+    cy_en_rtc_status_t status;
 
     p_tm = localtime(&time_stamp);
 
@@ -56,9 +57,10 @@ static rt_err_t set_rtc_time_stamp(time_t time_stamp)
     t.year    = p_tm->tm_year - 70;
     t.dayOfWeek = p_tm->tm_wday + 1;
 
-    if( Cy_RTC_SetDateAndTimeDirect(t.sec, t.min, t.hour, t.date, t.month, t.year ) != CY_RTC_SUCCESS)
+    status = Cy_RTC_SetDateAndTimeDirect(t.sec, t.min, t.hour, t.date, t.month, t.year );
+    if( status != CY_RTC_SUCCESS)
     {
-        LOG_E("set rtc time error.");
+        LOG_E("set rtc time error.[0x%02x]", ~(CY_RTC_ID|CY_PDL_STATUS_ERROR)&status);
         return -RT_ERROR;
     }
 
