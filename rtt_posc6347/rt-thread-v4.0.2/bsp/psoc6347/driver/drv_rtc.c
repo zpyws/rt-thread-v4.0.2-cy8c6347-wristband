@@ -12,17 +12,6 @@
 
 #ifdef BSP_USING_ONCHIP_RTC
 
-
-#ifndef HAL_RTCEx_BKUPRead
-#define HAL_RTCEx_BKUPRead(x1, x2) (~BKUP_REG_DATA)
-#endif
-#ifndef HAL_RTCEx_BKUPWrite
-#define HAL_RTCEx_BKUPWrite(x1, x2, x3)
-#endif
-#ifndef RTC_BKP_DR1
-#define RTC_BKP_DR1 RT_NULL
-#endif
-
 //#define DRV_DEBUG
 #define LOG_TAG             "drv.rtc"
 #include <drv_log.h>
@@ -31,151 +20,69 @@
 
 static struct rt_device rtc;
 
-//static RTC_HandleTypeDef RTC_Handler;
-
 static time_t get_rtc_timestamp(void)
 {
-//    RTC_TimeTypeDef RTC_TimeStruct = {0};
-//    RTC_DateTypeDef RTC_DateStruct = {0};
     struct tm tm_new;
+    cy_stc_rtc_config_t dateTime = {0};
 
-#if 0
-    HAL_RTC_GetTime(&RTC_Handler, &RTC_TimeStruct, RTC_FORMAT_BIN);
-    HAL_RTC_GetDate(&RTC_Handler, &RTC_DateStruct, RTC_FORMAT_BIN);
+    Cy_RTC_GetDateAndTime(&dateTime);
 
-    tm_new.tm_sec  = RTC_TimeStruct.Seconds;
-    tm_new.tm_min  = RTC_TimeStruct.Minutes;
-    tm_new.tm_hour = RTC_TimeStruct.Hours;
-    tm_new.tm_mday = RTC_DateStruct.Date;
-    tm_new.tm_mon  = RTC_DateStruct.Month - 1;
-    tm_new.tm_year = RTC_DateStruct.Year + 100;
-#endif
+    tm_new.tm_sec  = dateTime.sec;
+    tm_new.tm_min  = dateTime.min;
+    tm_new.tm_hour = dateTime.hour;
+    tm_new.tm_mday = dateTime.date;
+    tm_new.tm_mon  = dateTime.month - 1;
+    tm_new.tm_year = dateTime.year + 70;
+
     LOG_D("get rtc time.");
     return mktime(&tm_new);
 }
 
 static rt_err_t set_rtc_time_stamp(time_t time_stamp)
 {
-#if 0
-    RTC_TimeTypeDef RTC_TimeStruct = {0};
-    RTC_DateTypeDef RTC_DateStruct = {0};
     struct tm *p_tm;
+    cy_stc_rtc_config_t t = {0};
 
     p_tm = localtime(&time_stamp);
-    if (p_tm->tm_year < 100)
+
+    if((p_tm->tm_year < 70)||(p_tm->tm_year>=170))
+        return -RT_ERROR;
+    
+    t.sec = p_tm->tm_sec ;
+    t.min = p_tm->tm_min ;
+    t.hour = p_tm->tm_hour;
+    t.date    = p_tm->tm_mday;
+    t.month   = p_tm->tm_mon + 1 ;
+    t.year    = p_tm->tm_year - 70;
+    t.dayOfWeek = p_tm->tm_wday + 1;
+
+    if( Cy_RTC_SetDateAndTimeDirect(t.sec, t.min, t.hour, t.date, t.month, t.year ) != CY_RTC_SUCCESS)
     {
+        LOG_E("set rtc time error.");
         return -RT_ERROR;
     }
 
-    RTC_TimeStruct.Seconds = p_tm->tm_sec ;
-    RTC_TimeStruct.Minutes = p_tm->tm_min ;
-    RTC_TimeStruct.Hours   = p_tm->tm_hour;
-    RTC_DateStruct.Date    = p_tm->tm_mday;
-    RTC_DateStruct.Month   = p_tm->tm_mon + 1 ;
-    RTC_DateStruct.Year    = p_tm->tm_year - 100;
-    RTC_DateStruct.WeekDay = p_tm->tm_wday + 1;
+    LOG_D("set rtc time ok.");
 
-    if (HAL_RTC_SetTime(&RTC_Handler, &RTC_TimeStruct, RTC_FORMAT_BIN) != HAL_OK)
-    {
-        return -RT_ERROR;
-    }
-    if (HAL_RTC_SetDate(&RTC_Handler, &RTC_DateStruct, RTC_FORMAT_BIN) != HAL_OK)
-    {
-        return -RT_ERROR;
-    }
-
-    LOG_D("set rtc time.");
-    HAL_RTCEx_BKUPWrite(&RTC_Handler, RTC_BKP_DR1, BKUP_REG_DATA);
-#endif
     return RT_EOK;
 }
 
 static void rt_rtc_init(void)
 {
-#if 0
-#ifndef SOC_SERIES_STM32H7
-    __HAL_RCC_PWR_CLK_ENABLE();
-#endif
-
-    RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-#ifdef BSP_RTC_USING_LSI
-    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI;
-    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
-    RCC_OscInitStruct.LSEState = RCC_LSE_OFF;
-    RCC_OscInitStruct.LSIState = RCC_LSI_ON;
-#else
-    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSE;
-    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
-    RCC_OscInitStruct.LSEState = RCC_LSE_ON;
-    RCC_OscInitStruct.LSIState = RCC_LSI_OFF;
-#endif
-    HAL_RCC_OscConfig(&RCC_OscInitStruct);
-#endif
+    RTCALM_Start();
 }
 
 static rt_err_t rt_rtc_config(struct rt_device *dev)
 {
-#if 0
-    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
-
-    HAL_PWR_EnableBkUpAccess();
-    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RTC;
-#ifdef BSP_RTC_USING_LSI
-    PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
-#else
-    PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
-#endif
-    HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
-
-    /* Enable RTC Clock */
-    __HAL_RCC_RTC_ENABLE();
-
-    RTC_Handler.Instance = RTC;
-    if (HAL_RTCEx_BKUPRead(&RTC_Handler, RTC_BKP_DR1) != BKUP_REG_DATA)
+    if (1)
     {
         LOG_I("RTC hasn't been configured, please use <date> command to config.");
 
-#if defined(SOC_SERIES_STM32F1)
-        RTC_Handler.Init.OutPut = RTC_OUTPUTSOURCE_NONE;
-        RTC_Handler.Init.AsynchPrediv = RTC_AUTO_1_SECOND;
-#elif defined(SOC_SERIES_STM32F0)
-
-        /* set the frequency division */
 #ifdef BSP_RTC_USING_LSI
-        RTC_Handler.Init.AsynchPrediv = 0XA0;
-        RTC_Handler.Init.SynchPrediv = 0xFA;
 #else
-        RTC_Handler.Init.AsynchPrediv = 0X7F;
-        RTC_Handler.Init.SynchPrediv = 0x0130;
 #endif /* BSP_RTC_USING_LSI */
-
-        RTC_Handler.Init.HourFormat = RTC_HOURFORMAT_24;
-        RTC_Handler.Init.OutPut = RTC_OUTPUT_DISABLE;
-        RTC_Handler.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
-        RTC_Handler.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
-#elif defined(SOC_SERIES_STM32F2) || defined(SOC_SERIES_STM32F4) || defined(SOC_SERIES_STM32F7) || defined(SOC_SERIES_STM32L4) || defined(SOC_SERIES_STM32H7)
-
-        /* set the frequency division */
-#ifdef BSP_RTC_USING_LSI
-        RTC_Handler.Init.AsynchPrediv = 0X7D;
-#else
-        RTC_Handler.Init.AsynchPrediv = 0X7F;
-#endif /* BSP_RTC_USING_LSI */
-        RTC_Handler.Init.SynchPrediv = 0XFF;
-
-        RTC_Handler.Init.HourFormat = RTC_HOURFORMAT_24;
-        RTC_Handler.Init.OutPut = RTC_OUTPUT_DISABLE;
-        RTC_Handler.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
-        RTC_Handler.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
-#endif
-#if 0
-        if (HAL_RTC_Init(&RTC_Handler) != HAL_OK)
-        {
-            return -RT_ERROR;
-        }
-#endif
     }
-#endif
+
     return RT_EOK;
 }
 
