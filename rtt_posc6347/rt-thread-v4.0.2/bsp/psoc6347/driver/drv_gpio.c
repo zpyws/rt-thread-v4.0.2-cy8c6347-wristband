@@ -14,6 +14,38 @@
 
 #ifdef RT_USING_PIN
 
+//根据应用需要进行动态配置
+#define MAX_GPIO_INT_CNT 10              //允许的GPIO中断的数量
+//**************************************************************************
+#define ITEM_NUM(items) sizeof(items) / sizeof(items[0])
+
+#define CYPRESS_PORTS   15
+    
+#define get_port(x)     (x>>3)
+#define get_pin(x)      (x&7)
+#define MCUPIN2RTTPIN(port,pin)     (((port)<<3)+(pin))
+#define PIN_MAX_VAL     (CYPRESS_PORTS*8)//(ITEM_NUM(pins))
+#define IRQ_MAX_VAL     (CYPRESS_PORTS)//(ITEM_NUM(port_irq_map))
+    
+static const uint32_t BIT_MASK_TAB[] = {1UL<<0, 1UL<<1, 1UL<<2, 1UL<<3, 1UL<<4, 1UL<<5, 1UL<<7, 1UL<<8, 1UL<<9, 1UL<<10, 1UL<<11, 1UL<<12, 1UL<<13, 1UL<<14, 1UL<<15};
+static const GPIO_PRT_Type *CYPRESS_PORT_BASE_TAB[] = 
+{
+    __CY8C_PORT(0),
+    __CY8C_PORT(1),
+    __CY8C_PORT(2),
+    __CY8C_PORT(3),
+    __CY8C_PORT(4),
+    __CY8C_PORT(5),
+    __CY8C_PORT(6),
+    __CY8C_PORT(7),
+    __CY8C_PORT(8),
+    __CY8C_PORT(9),
+    __CY8C_PORT(10),
+    __CY8C_PORT(11),
+    __CY8C_PORT(12),
+    __CY8C_PORT(13),
+    __CY8C_PORT(14),
+};
 //by yangwensen@20200319
 static const struct pin_index pins[] = 
 {
@@ -169,6 +201,44 @@ static const struct pin_index pins[] =
 #endif /* defined(GPIO_PRT0) */
 };
 
+#define __CYPRESS_PORT_IRQ_HANDLER(n)     {Port##n##_IRQHandler}
+#define __CYPRESS_PORT_IRQ_HANDLER__(n)     __CYPRESS_PORT_IRQ_HANDLER(n)
+
+void Port0_IRQHandler(void);
+void Port1_IRQHandler(void);
+void Port2_IRQHandler(void);
+void Port3_IRQHandler(void);
+void Port4_IRQHandler(void);
+void Port5_IRQHandler(void);
+void Port6_IRQHandler(void);
+void Port7_IRQHandler(void);
+void Port8_IRQHandler(void);
+void Port9_IRQHandler(void);
+void Port10_IRQHandler(void);
+void Port11_IRQHandler(void);
+void Port12_IRQHandler(void);
+void Port13_IRQHandler(void);
+void Port14_IRQHandler(void);
+static const cy_israddress CYPRESS_PORT_IRQ_HANDLER_MAP[CYPRESS_PORTS] = 
+{
+    __CYPRESS_PORT_IRQ_HANDLER__(0),
+    __CYPRESS_PORT_IRQ_HANDLER__(1),
+    __CYPRESS_PORT_IRQ_HANDLER__(2),
+    __CYPRESS_PORT_IRQ_HANDLER__(3),
+    __CYPRESS_PORT_IRQ_HANDLER__(4),
+    __CYPRESS_PORT_IRQ_HANDLER__(5),
+    __CYPRESS_PORT_IRQ_HANDLER__(6),
+    __CYPRESS_PORT_IRQ_HANDLER__(7),
+    __CYPRESS_PORT_IRQ_HANDLER__(8),
+    __CYPRESS_PORT_IRQ_HANDLER__(9),
+    __CYPRESS_PORT_IRQ_HANDLER__(10),
+    __CYPRESS_PORT_IRQ_HANDLER__(11),
+    __CYPRESS_PORT_IRQ_HANDLER__(12),
+    __CYPRESS_PORT_IRQ_HANDLER__(13),
+    __CYPRESS_PORT_IRQ_HANDLER__(14)
+};
+
+#if 0
 static const struct port_irq_map port_irq_map[] =
 {
     __CY8C_PORT_INT_MAP__(0),
@@ -187,77 +257,31 @@ static const struct port_irq_map port_irq_map[] =
     __CY8C_PORT_INT_MAP__(13),
     __CY8C_PORT_INT_MAP__(14)
 };
+#endif
 
-static struct rt_pin_irq_hdr pin_irq_hdr_tab[] =
-{
-    {-1, 0, RT_NULL, RT_NULL},
-    {-1, 0, RT_NULL, RT_NULL},
-    {-1, 0, RT_NULL, RT_NULL},
-    {-1, 0, RT_NULL, RT_NULL},
-    {-1, 0, RT_NULL, RT_NULL},
-    {-1, 0, RT_NULL, RT_NULL},
-    {-1, 0, RT_NULL, RT_NULL},
-    {-1, 0, RT_NULL, RT_NULL},
-    {-1, 0, RT_NULL, RT_NULL},
-    {-1, 0, RT_NULL, RT_NULL},
-    {-1, 0, RT_NULL, RT_NULL},
-    {-1, 0, RT_NULL, RT_NULL},
-    {-1, 0, RT_NULL, RT_NULL},
-    {-1, 0, RT_NULL, RT_NULL},
-    {-1, 0, RT_NULL, RT_NULL},
-    {-1, 0, RT_NULL, RT_NULL},
-};
+static struct rt_pin_irq_hdr pin_irq_hdr_tab[MAX_GPIO_INT_CNT];
 
-//static uint32_t pin_irq_enable_mask=0;
-
-#define ITEM_NUM(items) sizeof(items) / sizeof(items[0])
-static const struct pin_index *get_pin(uint8_t pin)
-{
-    const struct pin_index *index;
-
-    if (pin < ITEM_NUM(pins))
-    {
-        index = &pins[pin];
-        if (index->index == -1)
-            index = RT_NULL;
-    }
-    else
-    {
-        index = RT_NULL;
-    }
-
-    return index;
-};
+//by yangwensen@20200325
+static uint8_t port_irq_enable_mask[CYPRESS_PORTS] = {0};
 
 //by yangwensen@20200319
 static void cy8c_pin_write(rt_device_t dev, rt_base_t pin, rt_base_t value)
 {
-    const struct pin_index *index;
-
-    index = get_pin(pin);
-    if (index == RT_NULL)
-    {
+    if (pin > PIN_MAX_VAL)
         return;
-    }
-
-    Cy_GPIO_Write(index->gpio, index->pin, (uint32_t)value);
+    
+    Cy_GPIO_Write(pins[pin].gpio, pins[pin].pin, (uint32_t)value);
 }
 
 //by yangwensen@20200319
 static int cy8c_pin_read(rt_device_t dev, rt_base_t pin)
 {
-    int value;
-    const struct pin_index *index;
+    int value = PIN_LOW;
 
-    value = PIN_LOW;
-
-    index = get_pin(pin);
-    if (index == RT_NULL)
-    {
+    if (pin > PIN_MAX_VAL)
         return value;
-    }
 
-    value = Cy_GPIO_Read(index->gpio, index->pin);
+    value = Cy_GPIO_Read(pins[pin].gpio, pins[pin].pin);
 
     return value;
 }
@@ -265,266 +289,172 @@ static int cy8c_pin_read(rt_device_t dev, rt_base_t pin)
 //by yangwensen@20200319
 static void cy8c_pin_mode(rt_device_t dev, rt_base_t pin, rt_base_t mode)
 {
-    const struct pin_index *index;
-
-    index = get_pin(pin);
-    if (index == RT_NULL)
-    {
+    if (pin > PIN_MAX_VAL)
         return;
-    }
-
+    
     if (mode == PIN_MODE_OUTPUT)
     {
         /* output setting */
-        Cy_GPIO_SetDrivemode(index->gpio, index->pin, CY_GPIO_DM_STRONG_IN_OFF);
+        Cy_GPIO_SetDrivemode(pins[pin].gpio, pins[pin].pin, CY_GPIO_DM_STRONG_IN_OFF);
     }
     else if (mode == PIN_MODE_INPUT)
     {
         //Digital High-Z. Input buffer on
-        Cy_GPIO_SetDrivemode(index->gpio, index->pin, CY_GPIO_DM_HIGHZ);
+        Cy_GPIO_SetDrivemode(pins[pin].gpio, pins[pin].pin, CY_GPIO_DM_HIGHZ);
     }
     else if (mode == PIN_MODE_INPUT_PULLUP)
     {
         //Resistive Pull-Up. Input buffer on
-        Cy_GPIO_SetDrivemode(index->gpio, index->pin, CY_GPIO_DM_PULLUP);
+        Cy_GPIO_SetDrivemode(pins[pin].gpio, pins[pin].pin, CY_GPIO_DM_PULLUP);
     }
     else if (mode == PIN_MODE_INPUT_PULLDOWN)
     {
         //Resistive Pull-Down. Input buffer on
-        Cy_GPIO_SetDrivemode(index->gpio, index->pin, CY_GPIO_DM_PULLDOWN);
+        Cy_GPIO_SetDrivemode(pins[pin].gpio, pins[pin].pin, CY_GPIO_DM_PULLDOWN);
     }
     else if (mode == PIN_MODE_OUTPUT_OD)
     {
         //Open Drain, Drives High.
-        Cy_GPIO_SetDrivemode(index->gpio, index->pin, CY_GPIO_DM_OD_DRIVESHIGH_IN_OFF);
+        Cy_GPIO_SetDrivemode(pins[pin].gpio, pins[pin].pin, CY_GPIO_DM_OD_DRIVESHIGH_IN_OFF);
     }
 }
 
-rt_inline rt_int32_t bit2bitno(rt_uint32_t bit)
+//by yangwensen@20200325
+rt_inline struct rt_pin_irq_hdr *get_pin_irq_handler(int32_t rtt_pin)
 {
-    int i;
-    for (i = 0; i < 32; i++)
+    uint32_t i;
+    
+    for(i=0; i<MAX_GPIO_INT_CNT; i++)
     {
-        if ((0x01 << i) == bit)
-        {
-            return i;
-        }
+        if(pin_irq_hdr_tab[i].pin == rtt_pin)
+            return &pin_irq_hdr_tab[i];
     }
-    return -1;
+    
+    return RT_NULL;
 }
 
-#if 0
-rt_inline const struct pin_irq_map *get_pin_irq_map(uint32_t pinbit)
-{
-    rt_int32_t mapindex = bit2bitno(pinbit);
-    if (mapindex < 0 || mapindex >= ITEM_NUM(pin_irq_map))
-    {
-        return RT_NULL;
-    }
-    return &pin_irq_map[mapindex];
-};
-#endif
-
-#if 0
-static rt_err_t stm32_pin_attach_irq(struct rt_device *device, rt_int32_t pin,
+static rt_err_t cy8c63_pin_attach_irq(struct rt_device *device, rt_int32_t pin,
                                      rt_uint32_t mode, void (*hdr)(void *args), void *args)
 {
-    const struct pin_index *index;
     rt_base_t level;
-    rt_int32_t irqindex = -1;
+    struct rt_pin_irq_hdr *pin_irq_cfg;
 
-    index = get_pin(pin);
-    if (index == RT_NULL)
-    {
+    if (pin > PIN_MAX_VAL)
         return RT_ENOSYS;
-    }
-    irqindex = bit2bitno(index->pin);
-    if (irqindex < 0 || irqindex >= ITEM_NUM(pin_irq_map))
-    {
-        return RT_ENOSYS;
-    }
 
     level = rt_hw_interrupt_disable();
-    if (pin_irq_hdr_tab[irqindex].pin == pin &&
-            pin_irq_hdr_tab[irqindex].hdr == hdr &&
-            pin_irq_hdr_tab[irqindex].mode == mode &&
-            pin_irq_hdr_tab[irqindex].args == args)
-    {
-        rt_hw_interrupt_enable(level);
-        return RT_EOK;
-    }
-    if (pin_irq_hdr_tab[irqindex].pin != -1)
+
+    pin_irq_cfg = get_pin_irq_handler(-1);
+    if(pin_irq_cfg==RT_NULL)
     {
         rt_hw_interrupt_enable(level);
         return RT_EBUSY;
     }
-    pin_irq_hdr_tab[irqindex].pin = pin;
-    pin_irq_hdr_tab[irqindex].hdr = hdr;
-    pin_irq_hdr_tab[irqindex].mode = mode;
-    pin_irq_hdr_tab[irqindex].args = args;
+    
+    pin_irq_cfg->pin = pin;
+    pin_irq_cfg->hdr = hdr;
+    pin_irq_cfg->mode = mode;
+    pin_irq_cfg->args = args;
+    
     rt_hw_interrupt_enable(level);
 
     return RT_EOK;
 }
-#endif
 
-#if 0
-static rt_err_t stm32_pin_dettach_irq(struct rt_device *device, rt_int32_t pin)
+static rt_err_t cy8c63_pin_dettach_irq(struct rt_device *device, rt_int32_t pin)
 {
-    const struct pin_index *index;
     rt_base_t level;
-    rt_int32_t irqindex = -1;
+    struct rt_pin_irq_hdr *pin_irq_cfg;
 
-    index = get_pin(pin);
-    if (index == RT_NULL)
-    {
+    if (pin > PIN_MAX_VAL)
         return RT_ENOSYS;
-    }
-    irqindex = bit2bitno(index->pin);
-    if (irqindex < 0 || irqindex >= ITEM_NUM(pin_irq_map))
-    {
-        return RT_ENOSYS;
-    }
 
     level = rt_hw_interrupt_disable();
-    if (pin_irq_hdr_tab[irqindex].pin == -1)
+    
+    pin_irq_cfg = get_pin_irq_handler(pin);
+    if(pin_irq_cfg==RT_NULL)
     {
         rt_hw_interrupt_enable(level);
-        return RT_EOK;
+        return RT_EBUSY;
     }
-    pin_irq_hdr_tab[irqindex].pin = -1;
-    pin_irq_hdr_tab[irqindex].hdr = RT_NULL;
-    pin_irq_hdr_tab[irqindex].mode = 0;
-    pin_irq_hdr_tab[irqindex].args = RT_NULL;
+    
+    pin_irq_cfg->pin = -1;
+    pin_irq_cfg->hdr = RT_NULL;
+    pin_irq_cfg->mode = 0;
+    pin_irq_cfg->args = RT_NULL;
+    
     rt_hw_interrupt_enable(level);
 
     return RT_EOK;
 }
-#endif
 
-#if 0
-static rt_err_t stm32_pin_irq_enable(struct rt_device *device, rt_base_t pin,
+//by yangwensen@20200325
+static rt_err_t cy8c63_pin_irq_enable(struct rt_device *device, rt_base_t rtt_pin,
                                      rt_uint32_t enabled)
 {
-    const struct pin_index *index;
-    const struct pin_irq_map *irqmap;
     rt_base_t level;
-    rt_int32_t irqindex = -1;
-//    GPIO_InitTypeDef GPIO_InitStruct;
+    uint32_t trigger_mode = CY_GPIO_INTR_DISABLE;
+    GPIO_PRT_Type *port_base;
+    uint8_t pin;
+    struct rt_pin_irq_hdr *pin_irq_cfg;
 
-    index = get_pin(pin);
-    if (index == RT_NULL)
-    {
+    if (rtt_pin > PIN_MAX_VAL)
         return RT_ENOSYS;
-    }
 
+    pin_irq_cfg = get_pin_irq_handler(rtt_pin);
+    if(pin_irq_cfg==RT_NULL)
+    {
+        rt_hw_interrupt_enable(level);
+        return RT_EBUSY;
+    }
+    
+    switch (pin_irq_cfg->mode)
+    {
+    case PIN_IRQ_MODE_RISING:
+        trigger_mode = CY_GPIO_INTR_RISING;
+        break;
+    case PIN_IRQ_MODE_FALLING:
+        trigger_mode = CY_GPIO_INTR_FALLING;
+        break;
+    case PIN_IRQ_MODE_RISING_FALLING:
+        trigger_mode = CY_GPIO_INTR_BOTH;
+        break;
+    }
+        
+    port_base = pins[rtt_pin].gpio;
+    pin = pins[rtt_pin].pin;
+    
     if (enabled == PIN_IRQ_ENABLE)
     {
-        irqindex = bit2bitno(index->pin);
-        if (irqindex < 0 || irqindex >= ITEM_NUM(pin_irq_map))
-        {
-            return RT_ENOSYS;
-        }
-
         level = rt_hw_interrupt_disable();
 
-        if (pin_irq_hdr_tab[irqindex].pin == -1)
+        Cy_GPIO_SetInterruptEdge(port_base, pin, trigger_mode);
+        Cy_GPIO_ClearInterrupt(port_base, pin);                     //clears the triggered pin interrupt
+        Cy_GPIO_SetInterruptMask(port_base, pin, 1ul);
+        
+        NVIC_SetPriority((IRQn_Type)get_port(rtt_pin), 7);
+        if (SCB->VTOR == (uint32_t)&__ramVectors)
         {
-            rt_hw_interrupt_enable(level);
-            return RT_ENOSYS;
+            (void)Cy_SysInt_SetVector((IRQn_Type)(get_port(rtt_pin)), CYPRESS_PORT_IRQ_HANDLER_MAP[get_port(rtt_pin)]);
         }
+        NVIC_EnableIRQ((IRQn_Type)get_port(rtt_pin));
 
-        irqmap = &pin_irq_map[irqindex];
-#if 0
-        /* Configure GPIO_InitStructure */
-        GPIO_InitStruct.Pin = index->pin;        
-        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-        switch (pin_irq_hdr_tab[irqindex].mode)
-        {
-        case PIN_IRQ_MODE_RISING:
-            GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-            GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-            break;
-        case PIN_IRQ_MODE_FALLING:
-            GPIO_InitStruct.Pull = GPIO_PULLUP;
-            GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-            break;
-        case PIN_IRQ_MODE_RISING_FALLING:
-            GPIO_InitStruct.Pull = GPIO_NOPULL;
-            GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-            break;
-        }
-        HAL_GPIO_Init(index->gpio, &GPIO_InitStruct);
-
-        HAL_NVIC_SetPriority(irqmap->irqno, 5, 0);
-        HAL_NVIC_EnableIRQ(irqmap->irqno);
-        pin_irq_enable_mask |= irqmap->pinbit;
-#endif
+        port_irq_enable_mask[get_port(rtt_pin)] |= BIT_MASK_TAB[pin];
 
         rt_hw_interrupt_enable(level);
     }
     else if (enabled == PIN_IRQ_DISABLE)
     {
-        irqmap = get_pin_irq_map(index->pin);
-        if (irqmap == RT_NULL)
-        {
-            return RT_ENOSYS;
-        }
-
         level = rt_hw_interrupt_disable();
-
-        HAL_GPIO_DeInit(index->gpio, index->pin);
-
-        pin_irq_enable_mask &= ~irqmap->pinbit;
-#if defined(SOC_SERIES_STM32F0) || defined(SOC_SERIES_STM32G0)
-        if (( irqmap->pinbit>=GPIO_PIN_0 )&&( irqmap->pinbit<=GPIO_PIN_1 ))
-        {
-            if(!(pin_irq_enable_mask&(GPIO_PIN_0|GPIO_PIN_1)))
-            {    
-                HAL_NVIC_DisableIRQ(irqmap->irqno);
-            }
-        }
-        else if (( irqmap->pinbit>=GPIO_PIN_2 )&&( irqmap->pinbit<=GPIO_PIN_3 ))
-        {
-            if(!(pin_irq_enable_mask&(GPIO_PIN_2|GPIO_PIN_3)))
-            {    
-                HAL_NVIC_DisableIRQ(irqmap->irqno);
-            }
-        }
-        else if (( irqmap->pinbit>=GPIO_PIN_4 )&&( irqmap->pinbit<=GPIO_PIN_15 ))
-        {
-            if(!(pin_irq_enable_mask&(GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9|
-                                      GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15)))
-            {    
-                HAL_NVIC_DisableIRQ(irqmap->irqno);
-            }
-        }    
-        else
-        {
-            HAL_NVIC_DisableIRQ(irqmap->irqno);
-        }         
-#else      
-    #if 0
-        if (( irqmap->pinbit>=GPIO_PIN_5 )&&( irqmap->pinbit<=GPIO_PIN_9 ))
-        {
-            if(!(pin_irq_enable_mask&(GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9)))
-            {    
-                HAL_NVIC_DisableIRQ(irqmap->irqno);
-            }
-        }
-        else if (( irqmap->pinbit>=GPIO_PIN_10 )&&( irqmap->pinbit<=GPIO_PIN_15 ))
-        {
-            if(!(pin_irq_enable_mask&(GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15)))
-            {    
-                HAL_NVIC_DisableIRQ(irqmap->irqno);
-            }
-        }
-        else
-        {
-            HAL_NVIC_DisableIRQ(irqmap->irqno);
-        }        
-    #endif
-#endif          
+        
+//      HAL_GPIO_DeInit(index->gpio, index->pin);
+        port_irq_enable_mask[get_port(rtt_pin)] &= ~BIT_MASK_TAB[pin];
+        
+        Cy_GPIO_SetInterruptMask(port_base, pin, 0ul);              //disable pin interrupt
+        Cy_GPIO_ClearInterrupt(port_base, pin);                     //clears the triggered pin interrupt
+        if( !port_irq_enable_mask[get_port(rtt_pin)] )
+            NVIC_DisableIRQ((IRQn_Type)get_port(rtt_pin));          //disable port interrupt
+            
         rt_hw_interrupt_enable(level);  
     }
     else
@@ -534,142 +464,163 @@ static rt_err_t stm32_pin_irq_enable(struct rt_device *device, rt_base_t pin,
 
     return RT_EOK;
 }
-#endif
 
 const static struct rt_pin_ops _cy8c_pin_ops =
 {
     .pin_mode = cy8c_pin_mode,
     .pin_write = cy8c_pin_write,
     .pin_read = cy8c_pin_read,
-    .pin_attach_irq = 0,
-    .pin_detach_irq = 0,
-    .pin_irq_enable = 0
+    .pin_attach_irq = cy8c63_pin_attach_irq,
+    .pin_detach_irq = cy8c63_pin_dettach_irq,
+    .pin_irq_enable = cy8c63_pin_irq_enable
 };
 
-rt_inline void pin_irq_hdr(int irqno)
+//by yangwensen@20200325
+rt_inline void pin_irq_hdr(uint8_t port)
 {
-    if (pin_irq_hdr_tab[irqno].hdr)
+    GPIO_PRT_Type *port_base;
+    uint8_t i;
+    uint8_t port_int_mask;
+    struct rt_pin_irq_hdr *pin_irq_handler;
+    
+    port_base = (GPIO_PRT_Type *)(CYPRESS_PORT_BASE_TAB[port]);
+    port_int_mask = port_irq_enable_mask[port];
+    
+    for(i=0; i<8; i++)
     {
-        pin_irq_hdr_tab[irqno].hdr(pin_irq_hdr_tab[irqno].args);
+        if(port_int_mask & BIT_MASK_TAB[i])                         //pin interrupt enabled
+        {
+            if( Cy_GPIO_GetInterruptStatus(port_base, i) )          //interrupt triggered
+            {
+                Cy_GPIO_ClearInterrupt(port_base, i);               //Clears the triggered pin interrupt
+                
+                pin_irq_handler = get_pin_irq_handler( MCUPIN2RTTPIN(port,i) );
+                if(pin_irq_handler->hdr)
+                    pin_irq_handler->hdr(pin_irq_handler->args);    //do handler
+            }
+        }
     }
 }
 
-#if defined(SOC_SERIES_STM32G0)
-void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
-{
-    pin_irq_hdr(bit2bitno(GPIO_Pin));
-}
-
-void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
-{
-    pin_irq_hdr(bit2bitno(GPIO_Pin));
-}
-#else
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-    pin_irq_hdr(bit2bitno(GPIO_Pin));
-}
-#endif
-
-#if defined(SOC_SERIES_STM32F0) || defined(SOC_SERIES_STM32G0) || defined(SOC_SERIES_STM32L0)
-void EXTI0_1_IRQHandler(void)
+void Port0_IRQHandler(void)
 {
     rt_interrupt_enter();
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
+    pin_irq_hdr(0);
     rt_interrupt_leave();
 }
 
-void EXTI2_3_IRQHandler(void)
+void Port1_IRQHandler(void)
 {
     rt_interrupt_enter();
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
-    rt_interrupt_leave();
-}
-void EXTI4_15_IRQHandler(void)
-{
-    rt_interrupt_enter();
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_8);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_9);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_10);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_11);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_12);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_14);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
+    pin_irq_hdr(1);
     rt_interrupt_leave();
 }
 
-#else
-    
-#if 0
-void EXTI0_IRQHandler(void)
+void Port2_IRQHandler(void)
 {
     rt_interrupt_enter();
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
+    pin_irq_hdr(2);
     rt_interrupt_leave();
 }
 
-void EXTI1_IRQHandler(void)
+void Port3_IRQHandler(void)
 {
     rt_interrupt_enter();
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
+    pin_irq_hdr(3);
     rt_interrupt_leave();
 }
 
-void EXTI2_IRQHandler(void)
+void Port4_IRQHandler(void)
 {
     rt_interrupt_enter();
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
+    pin_irq_hdr(4);
     rt_interrupt_leave();
 }
 
-void EXTI3_IRQHandler(void)
+void Port5_IRQHandler(void)
 {
     rt_interrupt_enter();
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
+    pin_irq_hdr(5);
     rt_interrupt_leave();
 }
 
-void EXTI4_IRQHandler(void)
+void Port6_IRQHandler(void)
 {
     rt_interrupt_enter();
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
+    pin_irq_hdr(6);
     rt_interrupt_leave();
 }
 
-void EXTI9_5_IRQHandler(void)
+void Port7_IRQHandler(void)
 {
     rt_interrupt_enter();
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_8);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_9);
+    pin_irq_hdr(7);
     rt_interrupt_leave();
 }
 
-void EXTI15_10_IRQHandler(void)
+void Port8_IRQHandler(void)
 {
     rt_interrupt_enter();
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_10);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_11);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_12);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_14);
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
+    pin_irq_hdr(8);
     rt_interrupt_leave();
 }
-#endif
-#endif
+
+void Port9_IRQHandler(void)
+{
+    rt_interrupt_enter();
+    pin_irq_hdr(9);
+    rt_interrupt_leave();
+}
+
+void Port10_IRQHandler(void)
+{
+    rt_interrupt_enter();
+    pin_irq_hdr(10);
+    rt_interrupt_leave();
+}
+
+void Port11_IRQHandler(void)
+{
+    rt_interrupt_enter();
+    pin_irq_hdr(11);
+    rt_interrupt_leave();
+}
+
+void Port12_IRQHandler(void)
+{
+    rt_interrupt_enter();
+    pin_irq_hdr(12);
+    rt_interrupt_leave();
+}
+
+void Port13_IRQHandler(void)
+{
+    rt_interrupt_enter();
+    pin_irq_hdr(13);
+    rt_interrupt_leave();
+}
+
+void Port14_IRQHandler(void)
+{
+    rt_interrupt_enter();
+    pin_irq_hdr(14);
+    rt_interrupt_leave();
+}
 
 int rt_hw_pin_init(void)
 {
+    uint32_t i;
+    
+    for(i=0; i<MAX_GPIO_INT_CNT; i++)
+    {
+        pin_irq_hdr_tab[i].pin = -1;
+    }
+    
+    for(i=0; i<CYPRESS_PORTS; i++)
+    {
+        port_irq_enable_mask[i] = 0;
+    }
+    
 #if defined(__HAL_RCC_GPIOA_CLK_ENABLE)
     __HAL_RCC_GPIOA_CLK_ENABLE();
 #endif
