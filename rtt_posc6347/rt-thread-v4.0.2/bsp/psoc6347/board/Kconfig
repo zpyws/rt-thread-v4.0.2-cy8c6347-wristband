@@ -105,6 +105,12 @@ menu "On-chip Peripheral Drivers"
         bool "Enable GPIO"
         select RT_USING_PIN
         default y
+		if RT_USING_PIN
+			config MAX_GPIO_INT_PINS
+			int "The count of pins with interupt enabled"
+			range 1 120
+			default 4
+		endif
 
     menuconfig BSP_USING_UART
         bool "Enable UART"

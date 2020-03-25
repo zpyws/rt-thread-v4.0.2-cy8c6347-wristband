@@ -87,7 +87,6 @@
 #define RT_USING_SERIAL
 #define RT_SERIAL_RB_BUFSZ 64
 #define RT_USING_I2C
-#define RT_I2C_DEBUG
 #define RT_USING_PIN
 #define RT_USING_MTD_NOR
 #define RT_USING_RTC
@@ -99,7 +98,6 @@
 #define RT_SFUD_USING_FLASH_INFO_TABLE
 #define RT_SFUD_USING_QSPI
 #define RT_SFUD_SPI_MAX_HZ 50000000
-#define RT_DEBUG_SFUD
 
 /* Using USB */
 
@@ -196,6 +194,8 @@
 
 /* On-chip Peripheral Drivers */
 
+#define BSP_USING_GPIO
+#define MAX_GPIO_INT_PINS 4
 #define BSP_USING_UART
 #define BSP_USING_UART6
 #define BSP_USING_SPI

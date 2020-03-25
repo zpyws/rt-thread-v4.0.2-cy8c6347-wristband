@@ -14,8 +14,6 @@
 
 #ifdef RT_USING_PIN
 
-//根据应用需要进行动态配置
-#define MAX_GPIO_INT_CNT 10              //允许的GPIO中断的数量
 //**************************************************************************
 #define ITEM_NUM(items) sizeof(items) / sizeof(items[0])
 
@@ -259,7 +257,7 @@ static const struct port_irq_map port_irq_map[] =
 };
 #endif
 
-static struct rt_pin_irq_hdr pin_irq_hdr_tab[MAX_GPIO_INT_CNT];
+static struct rt_pin_irq_hdr pin_irq_hdr_tab[MAX_GPIO_INT_PINS];
 
 //by yangwensen@20200325
 static uint8_t port_irq_enable_mask[CYPRESS_PORTS] = {0};
@@ -324,7 +322,7 @@ rt_inline struct rt_pin_irq_hdr *get_pin_irq_handler(int32_t rtt_pin)
 {
     uint32_t i;
     
-    for(i=0; i<MAX_GPIO_INT_CNT; i++)
+    for(i=0; i<MAX_GPIO_INT_PINS; i++)
     {
         if(pin_irq_hdr_tab[i].pin == rtt_pin)
             return &pin_irq_hdr_tab[i];
@@ -611,7 +609,7 @@ int rt_hw_pin_init(void)
 {
     uint32_t i;
     
-    for(i=0; i<MAX_GPIO_INT_CNT; i++)
+    for(i=0; i<MAX_GPIO_INT_PINS; i++)
     {
         pin_irq_hdr_tab[i].pin = -1;
     }
