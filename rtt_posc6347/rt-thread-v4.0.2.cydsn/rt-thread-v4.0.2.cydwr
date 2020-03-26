@@ -12,6 +12,7 @@
       <Data key="d28a5938-7af9-4e97-afe8-5446b6b9b869/b68e5b9d-7828-482d-a282-930f990e3b3e" value="GSENSOR_COMPASS_I2C_SCBCLK" />
     </Group>
     <Group key="Pin">
+      <Data key="4cca878b-77b5-471d-8aeb-ad6925202455" value="HOME_KEY" />
       <Data key="26a270ef-d524-4a8f-8147-304cf639fca7/6ba19c63-25fc-4919-b4e0-53fabfc62c78" value="QSPI1_spi_data_1" />
       <Data key="26a270ef-d524-4a8f-8147-304cf639fca7/7a693b7d-1138-46db-9780-4b3c4d88691d" value="QSPI1_spi_data_3" />
       <Data key="26a270ef-d524-4a8f-8147-304cf639fca7/7b445908-8861-4ded-9ee3-82f2f24bb47f" value="QSPI1_spi_clk" />
@@ -706,6 +707,11 @@
     </Group>
   </Group>
   <Group key="Pin2">
+    <Group key="4cca878b-77b5-471d-8aeb-ad6925202455">
+      <Group key="0">
+        <Data key="Port Format" value="7,0" />
+      </Group>
+    </Group>
     <Group key="26a270ef-d524-4a8f-8147-304cf639fca7/6ba19c63-25fc-4919-b4e0-53fabfc62c78">
       <Group key="0">
         <Data key="Port Format" value="11,5" />
