@@ -331,6 +331,7 @@ rt_inline struct rt_pin_irq_hdr *get_pin_irq_handler(int32_t rtt_pin)
     return RT_NULL;
 }
 
+//by yangwensen@20200325
 static rt_err_t cy8c63_pin_attach_irq(struct rt_device *device, rt_int32_t pin,
                                      rt_uint32_t mode, void (*hdr)(void *args), void *args)
 {
@@ -359,6 +360,7 @@ static rt_err_t cy8c63_pin_attach_irq(struct rt_device *device, rt_int32_t pin,
     return RT_EOK;
 }
 
+//by yangwensen@20200325
 static rt_err_t cy8c63_pin_dettach_irq(struct rt_device *device, rt_int32_t pin)
 {
     rt_base_t level;
@@ -402,7 +404,6 @@ static rt_err_t cy8c63_pin_irq_enable(struct rt_device *device, rt_base_t rtt_pi
     pin_irq_cfg = get_pin_irq_handler(rtt_pin);
     if(pin_irq_cfg==RT_NULL)
     {
-        rt_hw_interrupt_enable(level);
         return RT_EBUSY;
     }
     
@@ -445,7 +446,6 @@ static rt_err_t cy8c63_pin_irq_enable(struct rt_device *device, rt_base_t rtt_pi
     {
         level = rt_hw_interrupt_disable();
         
-//      HAL_GPIO_DeInit(index->gpio, index->pin);
         port_irq_enable_mask[get_port(rtt_pin)] &= ~BIT_MASK_TAB[pin];
         
         Cy_GPIO_SetInterruptMask(port_base, pin, 0ul);              //disable pin interrupt
