@@ -88,6 +88,7 @@
 #define RT_SERIAL_RB_BUFSZ 64
 #define RT_USING_I2C
 #define RT_USING_PIN
+#define RT_USING_ADC
 #define RT_USING_MTD_NOR
 #define RT_USING_RTC
 #define RT_USING_ALARM
@@ -203,6 +204,8 @@
 #define BSP_USING_QSPI
 #define BSP_USING_I2C
 #define BSP_USING_I2C1
+#define BSP_USING_ADC
+#define BSP_USING_ADC1
 #define BSP_USING_ONCHIP_RTC
 #define BSP_RTC_USING_LSE
 
