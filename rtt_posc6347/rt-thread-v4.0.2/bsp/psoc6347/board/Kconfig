@@ -389,6 +389,11 @@ menu "On-chip Peripheral Drivers"
         select RT_USING_DFS
         default n
 
+    config BSP_USING_USBD
+        bool "Enable PSoC63 USB device"
+        select RT_USING_USB_DEVICE
+        default n
+
     config BSP_USING_FMC
         bool
         default n
