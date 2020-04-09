@@ -24,6 +24,7 @@ extern "C" {
 #include "config/psoc63/i2c_config.h"
 #include "config/psoc63/spi_config.h"
 #include "config/psoc63/adc_config.h"
+#include "config/psoc63/usbd_config.h"
 #elif defined(SOC_SERIES_STM32F1)
 #include "f1/dma_config.h"
 #include "f1/uart_config.h"
