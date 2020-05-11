@@ -469,6 +469,13 @@
 <build_action v="SOURCE_C;CortexM4;CortexM4;;" />
 <PropertyDeltas />
 </CyGuid_8b8ab257-35d3-4473-b57b-36315200b38b>
+<CyGuid_8b8ab257-35d3-4473-b57b-36315200b38b type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtFileSerialize" version="3" xml_contents_version="1">
+<CyGuid_31768f72-0253-412b-af77-e7dba74d1330 type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtItemSerialize" version="2" name="tofile.c" persistent="..\rt-thread-v4.0.2\bsp\psoc6347\applications\tofile.c">
+<Hidden v="False" />
+</CyGuid_31768f72-0253-412b-af77-e7dba74d1330>
+<build_action v="SOURCE_C;CortexM4;CortexM4;;" />
+<PropertyDeltas />
+</CyGuid_8b8ab257-35d3-4473-b57b-36315200b38b>
 </dependencies>
 </CyGuid_0820c2e7-528d-4137-9a08-97257b946089>
 </CyGuid_2f73275c-45bf-46ba-b3b1-00a2fe0c8dd8>
@@ -1304,6 +1311,20 @@
 </CyGuid_8b8ab257-35d3-4473-b57b-36315200b38b>
 <CyGuid_8b8ab257-35d3-4473-b57b-36315200b38b type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtFileSerialize" version="3" xml_contents_version="1">
 <CyGuid_31768f72-0253-412b-af77-e7dba74d1330 type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtItemSerialize" version="2" name="console_be.c" persistent="..\rt-thread-v4.0.2\components\utilities\ulog\backend\console_be.c">
+<Hidden v="False" />
+</CyGuid_31768f72-0253-412b-af77-e7dba74d1330>
+<build_action v="SOURCE_C;CortexM4;CortexM4;;" />
+<PropertyDeltas />
+</CyGuid_8b8ab257-35d3-4473-b57b-36315200b38b>
+<CyGuid_8b8ab257-35d3-4473-b57b-36315200b38b type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtFileSerialize" version="3" xml_contents_version="1">
+<CyGuid_31768f72-0253-412b-af77-e7dba74d1330 type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtItemSerialize" version="2" name="ry_sy.c" persistent="..\rt-thread-v4.0.2\components\utilities\ymodem\ry_sy.c">
+<Hidden v="False" />
+</CyGuid_31768f72-0253-412b-af77-e7dba74d1330>
+<build_action v="SOURCE_C;CortexM4;CortexM4;;" />
+<PropertyDeltas />
+</CyGuid_8b8ab257-35d3-4473-b57b-36315200b38b>
+<CyGuid_8b8ab257-35d3-4473-b57b-36315200b38b type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtFileSerialize" version="3" xml_contents_version="1">
+<CyGuid_31768f72-0253-412b-af77-e7dba74d1330 type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtItemSerialize" version="2" name="ymodem.c" persistent="..\rt-thread-v4.0.2\components\utilities\ymodem\ymodem.c">
 <Hidden v="False" />
 </CyGuid_31768f72-0253-412b-af77-e7dba74d1330>
 <build_action v="SOURCE_C;CortexM4;CortexM4;;" />
@@ -3998,7 +4019,7 @@
 <name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM0p@Linker@General@Custom Linker Script" v="" />
 <name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM0p@Linker@General@Generate Debugging Information" v="True" />
 <name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM0p@Linker@General@Use Default Libs" v="True" />
-<name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM0p@Linker@Command Line@Command Line" v="" />
+<name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM0p@Linker@Command Line@Command Line" v="--diag_suppress=L6314W,L6329W" />
 <name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM0p@User Commands@General@Pre Build Commands" v="" />
 <name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM0p@User Commands@General@Post Build Commands" v="" />
 <name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Release@CortexM0p@General@Output Directory" v="${ProjectDir}\${ProcessorType}\${Platform}\${Config}" />
@@ -4037,7 +4058,7 @@
 <name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM4@Assembly@General@Generate List Files" v="True" />
 <name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM4@Assembly@Command Line@Command Line" v="" />
 <name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM4@Assembly@General@SHARED Use MicroLib" v="" />
-<name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM4@C/C++@General@Additional Include Directories" v="..\rt-thread-v4.0.2\include; ..\rt-thread-v4.0.2\bsp\psoc6347; ..\rt-thread-v4.0.2\components\finsh; ..\rt-thread-v4.0.2\components\drivers\include; ..\rt-thread-v4.0.2\bsp\psoc6347\board; ..\rt-thread-v4.0.2\bsp\psoc6347\driver; ..\rt-thread-v4.0.2\components\drivers\spi\sfud\inc; ..\rt-thread-v4.0.2\components\drivers\spi; ..\rt-thread-v4.0.2\components\dfs\include; ..\rt-thread-v4.0.2\bsp\psoc6347\packages\fal-v0.4.0\inc; ..\rt-thread-v4.0.2\bsp\psoc6347\board\ports; ..\rt-thread-v4.0.2\components\libc\compilers\common; ..\rt-thread-v4.0.2\components\libc\compilers\armlibc; ..\rt-thread-v4.0.2\components\utilities\ulog" />
+<name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM4@C/C++@General@Additional Include Directories" v="..\rt-thread-v4.0.2\include; ..\rt-thread-v4.0.2\bsp\psoc6347; ..\rt-thread-v4.0.2\components\finsh; ..\rt-thread-v4.0.2\components\drivers\include; ..\rt-thread-v4.0.2\bsp\psoc6347\board; ..\rt-thread-v4.0.2\bsp\psoc6347\driver; ..\rt-thread-v4.0.2\components\drivers\spi\sfud\inc; ..\rt-thread-v4.0.2\components\drivers\spi; ..\rt-thread-v4.0.2\components\dfs\include; ..\rt-thread-v4.0.2\bsp\psoc6347\packages\fal-v0.4.0\inc; ..\rt-thread-v4.0.2\bsp\psoc6347\board\ports; ..\rt-thread-v4.0.2\components\libc\compilers\common; ..\rt-thread-v4.0.2\components\libc\compilers\armlibc; ..\rt-thread-v4.0.2\components\utilities\ulog; ..\rt-thread-v4.0.2\components\utilities\ymodem" />
 <name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM4@C/C++@General@Generate List Files" v="True" />
 <name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM4@C/C++@General@Default Char Unsigned" v="False" />
 <name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM4@C/C++@General@Generate Debugging Information" v="True" />
@@ -4056,7 +4077,7 @@
 <name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM4@Linker@General@Custom Linker Script" v="" />
 <name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM4@Linker@General@Generate Debugging Information" v="True" />
 <name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM4@Linker@General@Use Default Libs" v="True" />
-<name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM4@Linker@Command Line@Command Line" v="" />
+<name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM4@Linker@Command Line@Command Line" v="--diag_suppress=L6314W,L6329W" />
 <name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM4@User Commands@General@Pre Build Commands" v="" />
 <name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Debug@CortexM4@User Commands@General@Post Build Commands" v="" />
 <name_val_pair name="fdb8e1ae-f83a-46cf-9446-1d703716f38a@Release@CortexM4@General@Output Directory" v="${ProjectDir}\${ProcessorType}\${Platform}\${Config}" />

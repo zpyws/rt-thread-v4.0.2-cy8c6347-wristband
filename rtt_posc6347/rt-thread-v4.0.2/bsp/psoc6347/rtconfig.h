@@ -136,6 +136,8 @@
 
 /* Utilities */
 
+#define RT_USING_RYM
+#define YMODEM_USING_FILE_TRANSFER
 #define RT_USING_ULOG
 #define ULOG_OUTPUT_LVL_D
 #define ULOG_OUTPUT_LVL 7
