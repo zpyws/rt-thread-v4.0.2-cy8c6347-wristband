@@ -98,14 +98,14 @@ static enum rym_code _rym_send_begin(
     {
         err = rt_get_errno();
         rt_kprintf("error open file: %d\n", err);
-        return RYM_ERR_FILE;
+        return (enum rym_code)RYM_ERR_FILE;
     }
     rt_memset(buf, 0, len);
     err = stat(cctx->fpath, &file_buf);
     if (err != RT_EOK)
     {
         rt_kprintf("error open file.\n");
-        return RYM_ERR_FILE;
+        return (enum rym_code)RYM_ERR_FILE;
     }
     sprintf((char *)buf, "%s%c%ld", (char *) & (cctx->fpath[1]), insert_0, file_buf.st_size);
 
@@ -133,7 +133,7 @@ static enum rym_code _rym_send_data(
     {
         rt_memset(buf + read_size, 0x1A, len - read_size);
         /* stage = RYM_STAGE_FINISHING */
-        ctx->stage = 4;
+        ctx->stage = (enum rym_stage)4;
     }
 
     return RYM_CODE_SOH;
