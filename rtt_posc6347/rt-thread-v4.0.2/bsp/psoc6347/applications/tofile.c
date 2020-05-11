@@ -111,3 +111,22 @@ rt_err_t ry(char *dname)
 }
 FINSH_FUNCTION_EXPORT(ry, receive files by ymodem protocol);
 #endif
+
+//by yangwensen@20200511
+rt_err_t ymodem_rec(uint8_t argc, char **argv)
+{
+  rt_err_t res;
+
+    rt_device_t dev = rt_device_find(argv[1]);
+    if (!dev)
+    {
+        rt_kprintf("could not find device:%s\n", argv[1]);
+        return -RT_ERROR;
+    }
+
+    res = rym_write_to_file(dev);
+
+    return res;
+}
+
+MSH_CMD_EXPORT(ymodem_rec, receive files by ymodem protocol);
