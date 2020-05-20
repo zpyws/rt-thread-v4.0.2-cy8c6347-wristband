@@ -113,12 +113,12 @@
 /**\name API warning codes */
 #define KX022_W_SELF_TEST_FAIL    INT8_C(1)
 /**\name CHIP ID VALUE */
-#define KX022_CHIP_ID     UINT8_C(0x13)
+#define KX022_CHIP_ID     UINT8_C(0x14)
 /********************************************************/
 /**\name	USER CONFIGURATION MACROS               */
 /**\name KX022 I2C address macros */
-#define KX022_I2C_ADDRESS_SDO_LOW     UINT8_C(0x14)
-#define KX022_I2C_ADDRESS_SDO_HIGH    UINT8_C(0x15)
+#define KX022_I2C_ADDRESS_SDO_LOW     UINT8_C(0x1e)
+#define KX022_I2C_ADDRESS_SDO_HIGH    UINT8_C(0x1f)
 /**\name Power mode configurations */
 #define KX022_NORMAL_MODE       UINT8_C(0)
 #define KX022_SLEEP_MODE        UINT8_C(1)
@@ -292,7 +292,8 @@
 #define KX022_HYST_96_MG    UINT8_C(0x03)
 /**********************************************************************/
 /**\name KX022 Register Address */
-#define KX022_CHIP_ID_ADDR              UINT8_C(0x01)
+#define KX022_CHIP_ID_ADDR              UINT8_C(0x0f)
+
 #define KX022_STATUS_ADDR               UINT8_C(0x03)
 #define KX022_ACCEL_DATA_ADDR           UINT8_C(0x02)
 #define KX022_INT_STAT0_ADDR            UINT8_C(0x0E)

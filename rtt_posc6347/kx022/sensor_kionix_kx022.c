@@ -93,11 +93,12 @@ static struct kx022_dev *_kx022_create(struct rt_sensor_intf *intf)
     rslt = kx022_init(_kx022_dev);
     if (rslt == KX022_OK)
     {
+        LOG_I("CHIP ID=0x%02x", _kx022_dev->chip_id);
         rslt = kx022_soft_reset(_kx022_dev);	//TODO, how to do soft reset?
 
         /* Select the type of configuration to be modified */
         conf.type = KX022_ACCEL;
-
+#if 0
         /* Get the accelerometer configurations which are set in the sensor */
         rslt = kx022_get_sensor_conf(&conf, 1, _kx022_dev);
 
@@ -107,7 +108,7 @@ static struct kx022_dev *_kx022_create(struct rt_sensor_intf *intf)
         conf.param.accel.range = KX022_2G_RANGE;
 
         kx022_set_power_mode(KX022_SLEEP_MODE, _kx022_dev);
-
+#endif
         return _kx022_dev;
     }
     else
@@ -317,3 +318,18 @@ int rt_hw_kx022_init(const char *name, struct rt_sensor_config *cfg)
 
     return RT_EOK;
 }
+
+//by yangwensen@20200520
+int kx022_port(void)
+{
+    struct rt_sensor_config cfg;
+
+    cfg.intf.dev_name = "i2c1";
+    cfg.intf.user_data = (void *)(KX022_I2C_ADDRESS_SDO_LOW+0);
+    cfg.irq_pin.pin = RT_PIN_NONE;
+
+    rt_hw_kx022_init("kx022", &cfg);
+
+    return 0;
+}
+INIT_APP_EXPORT(kx022_port);
