@@ -41,10 +41,10 @@
 #endif
 #include <rtdbg.h>
 
-#define I2CM_TIMEOUT                    0
+#define I2CM_TIMEOUT            100
 
 #define FIRST_FRAME             0x01
-#define LAST_FRAME              0x03
+#define LAST_FRAME              0x02
 
 //by yangwensen@20200320
 enum
@@ -63,6 +63,18 @@ enum
 #endif
 #ifdef BSP_USING_I2C4
     I2C4_INDEX,
+#endif
+#ifdef BSP_USING_I2C5
+    I2C5_INDEX,
+#endif
+#ifdef BSP_USING_I2C6
+    I2C6_INDEX,
+#endif
+#ifdef BSP_USING_I2C7
+    I2C7_INDEX,
+#endif
+#ifdef BSP_USING_I2C8
+    I2C8_INDEX,
 #endif
 };
 
@@ -83,6 +95,18 @@ static const struct cy8c63_i2c_config i2c_config[] =
 #endif
 #ifdef BSP_USING_I2C4
     I2C4_CONFIG,
+#endif
+#ifdef BSP_USING_I2C5
+    I2C5_CONFIG,
+#endif
+#ifdef BSP_USING_I2C6
+    I2C6_CONFIG,
+#endif
+#ifdef BSP_USING_I2C7
+    I2C7_CONFIG,
+#endif
+#ifdef BSP_USING_I2C8
+    I2C8_CONFIG,
 #endif
 };
 
@@ -105,7 +129,7 @@ static int cy8c63_i2c_read(struct cy8c63_i2c *i2c, uint8_t frame_type, rt_uint16
         return -1;
     
     /* wait until I2C bus is idle */
-    while( Cy_SCB_I2C_IsBusBusy(i2c->config->i2c_base) );
+//    while( Cy_SCB_I2C_IsBusBusy(i2c->config->i2c_base) );
 
     /* send a start condition to I2C bus */
     if(frame_type & FIRST_FRAME)
@@ -168,7 +192,7 @@ static int cy8c63_i2c_write(struct cy8c63_i2c *i2c, uint8_t frame_type, uint16_t
         return -1;
     
     /* wait until I2C bus is idle */
-    while( Cy_SCB_I2C_IsBusBusy(i2c->config->i2c_base) );
+//    while( Cy_SCB_I2C_IsBusBusy(i2c->config->i2c_base) );
 
     /* send a start condition to I2C bus */
     if(frame_type & FIRST_FRAME)
@@ -261,6 +285,10 @@ static rt_size_t cy8c63_i2c_mst_xfer(struct rt_i2c_bus_device *bus, struct rt_i2
                 break;
             }
         }
+
+    #ifdef RT_I2C_DEBUG
+        ulog_hexdump("I2C Data", 16, msg->buf, msg->len);
+    #endif
     }
     
     ret = i;
