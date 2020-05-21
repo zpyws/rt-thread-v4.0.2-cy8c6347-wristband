@@ -120,8 +120,8 @@
 #define KX022_I2C_ADDRESS_SDO_LOW     UINT8_C(0x1e)
 #define KX022_I2C_ADDRESS_SDO_HIGH    UINT8_C(0x1f)
 /**\name Power mode configurations */
-#define KX022_NORMAL_MODE       UINT8_C(0)
-#define KX022_SLEEP_MODE        UINT8_C(1)
+#define KX022_NORMAL_MODE       UINT8_C(1)
+#define KX022_SLEEP_MODE        UINT8_C(0)
 #define KX022_LOW_POWER_MODE    UINT8_C(0)
 /**\name Enable / Disable macros */
 #define KX022_DISABLE        UINT8_C(0)
@@ -130,17 +130,18 @@
 #define KX022_DATA_ONLY          UINT8_C(0x00)
 #define KX022_DATA_SENSOR_TIME   UINT8_C(0x01)
 /**\name ODR configurations  */
-#define KX022_ODR_1_HZ        UINT8_C(0x00)
-#define KX022_ODR_1_95HZ     UINT8_C(0x01)
-#define KX022_ODR_3_9HZ      UINT8_C(0x02)
-#define KX022_ODR_7_81HZ     UINT8_C(0x03)
-#define KX022_ODR_15_63HZ    UINT8_C(0x04)
-#define KX022_ODR_31_25HZ    UINT8_C(0x05)
-#define KX022_ODR_62_5HZ     UINT8_C(0x06)
-#define KX022_ODR_125HZ      UINT8_C(0x07)
-#define KX022_ODR_250HZ      UINT8_C(0x08)
-#define KX022_ODR_500HZ      UINT8_C(0x09)
-#define KX022_ODR_1000HZ      UINT8_C(0x0A)
+#define KX022_ODR_12_5_HZ       UINT8_C(0x00)
+#define KX022_ODR_25HZ          UINT8_C(0x01)
+#define KX022_ODR_50HZ          UINT8_C(0x02)
+#define KX022_ODR_100HZ         UINT8_C(0x03)
+#define KX022_ODR_200HZ         UINT8_C(0x04)
+#define KX022_ODR_400HZ         UINT8_C(0x05)
+#define KX022_ODR_800HZ         UINT8_C(0x06)
+#define KX022_ODR_1600HZ        UINT8_C(0x07)
+#define KX022_ODR_0_781HZ       UINT8_C(0x08)
+#define KX022_ODR_1_563HZ       UINT8_C(0x09)
+#define KX022_ODR_3_125HZ       UINT8_C(0x0A)
+#define KX022_ODR_6_25HZ        UINT8_C(0x0B)
 /**\name Accel Range configuration */
 #define KX022_2G_RANGE      UINT8_C(0x00)
 #define KX022_4G_RANGE      UINT8_C(0x01)
@@ -293,14 +294,33 @@
 /**********************************************************************/
 /**\name KX022 Register Address */
 #define KX022_CHIP_ID_ADDR              UINT8_C(0x0f)
+#define KX022_CNTL1_ADDR                UINT8_C(0x18)
+#define KX022_CNTL2_ADDR                UINT8_C(0x19)
+#define KX022_CNTL3_ADDR                UINT8_C(0x1a)
+#define KX022_ODCNTL_ADDR               UINT8_C(0x1b)
+#define KX022_INC1_ADDR                 UINT8_C(0x1c)
+#define KX022_INC2_ADDR                 UINT8_C(0x1d)
+#define KX022_INC3_ADDR                 UINT8_C(0x1e)
+#define KX022_INC4_ADDR                 UINT8_C(0x1f)
+#define KX022_TDTRC_ADDR                UINT8_C(0x24)
+#define KX022_TDTC_ADDR                 UINT8_C(0x25)
+#define KX022_TTH_ADDR                  UINT8_C(0x26)
+#define KX022_TTL_ADDR                  UINT8_C(0x27)
+#define KX022_FTD_ADDR                  UINT8_C(0x28)
+#define KX022_STD_ADDR                  UINT8_C(0x29)
+#define KX022_TLT_ADDR                  UINT8_C(0x2a)
+#define KX022_TWS_ADDR                  UINT8_C(0x2b)
+#define KX022_LPCNTL_ADDR               UINT8_C(0x35)
+#define KX022_ACCEL_DATA_ADDR           UINT8_C(0x06)
+#define KX022_BUF_CNTL1_ADDR            UINT8_C(0x3a)
+#define KX022_BUF_CNTL2_ADDR            UINT8_C(0x3b)
 
 #define KX022_STATUS_ADDR               UINT8_C(0x03)
-#define KX022_ACCEL_DATA_ADDR           UINT8_C(0x02)
 #define KX022_INT_STAT0_ADDR            UINT8_C(0x0E)
 #define KX022_TEMP_DATA_ADDR            UINT8_C(0x11)
 #define KX022_STEP_CNT_0_ADDR           UINT8_C(0x15)
 #define KX022_ACCEL_MODE_BW             UINT8_C(0x11)
-#define KX022_ACCEL_RESOLUTION_RANGE    UINT8_C(0x0F)
+//#define KX022_ACCEL_RESOLUTION_RANGE    UINT8_C(0x0F)
 #define KX022_ACCEL_CONFIG_1_ADDR       UINT8_C(0x10)
 #define KX022_ACCEL_CONFIG_2_ADDR       UINT8_C(0x11)
 #define KX022_INT_CONF_0_ADDR           UINT8_C(0x1F)
@@ -321,9 +341,10 @@
 #define KX022_SELF_TEST_ADDR            UINT8_C(0x7D)
 #define KX022_SPI_CONFIG                UINT8_C(0x00)
 /**\name KX022 Command register */
-#define KX022_SOFT_RESET_CMD            UINT8_C(0x24)
+#define KX022_SOFT_RESET                UINT8_C(1)
 
-#define KX022_SOFT_RESET_CMD_MSK       KX022_SOFT_RESET_CMD
+#define KX022_SOFT_RESET_CMD_MSK        UINT8_C(0x80)
+#define KX022_SOFT_RESET_CMD_POS        UINT8_C(7)
 /**\name KX022 Delay definitions */
 #define KX022_SOFT_RESET_DELAY_MS       UINT8_C(10)
 #define KX022_SELF_TEST_DELAY_MS        UINT8_C(7)
@@ -407,14 +428,14 @@
 
 #define KX022_ACCEL_ODR_MSK      UINT8_C(0x0F)
 
-#define KX022_ACCEL_RANGE_MSK    UINT8_C(0x03)
-#define KX022_ACCEL_RANGE_POS    UINT8_C(0)
+#define KX022_ACCEL_RANGE_MSK    UINT8_C(0x18)
+#define KX022_ACCEL_RANGE_POS    UINT8_C(3)
 
 #define KX022_DATA_FILTER_MSK   UINT8_C(0x0C)
 #define KX022_DATA_FILTER_POS   UINT8_C(2)
 
-#define KX022_BW_MSK            UINT8_C(0x06)
-#define KX022_BW_POS            UINT8_C(1)
+#define KX022_BW_MSK            UINT8_C(0xc0)
+#define KX022_BW_POS            UINT8_C(6)
 
 #define KX022_WAKEUP_TIMEOUT_MSK       UINT8_C(0x04)
 #define KX022_WAKEUP_TIMEOUT_POS       UINT8_C(2)

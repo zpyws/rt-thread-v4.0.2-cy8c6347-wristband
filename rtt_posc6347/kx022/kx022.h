@@ -59,6 +59,8 @@ int8_t kx022_set_regs(uint8_t reg_addr, uint8_t *reg_data, uint8_t len, const st
  */
 int8_t kx022_get_regs(uint8_t reg_addr, uint8_t *reg_data, uint8_t len, const struct kx022_dev *dev);
 
+int8_t kx022_set_reg_bitfield(uint8_t reg_addr, uint8_t bit_mask, uint8_t new_bitfield, const struct kx022_dev *dev);
+
 /*!
  * @brief This API is used to perform soft-reset of the sensor
  * where all the registers are reset to their default values except 0x4B.

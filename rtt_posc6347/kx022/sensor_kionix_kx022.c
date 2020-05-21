@@ -91,32 +91,35 @@ static struct kx022_dev *_kx022_create(struct rt_sensor_intf *intf)
     _kx022_dev->delay_ms = rt_delay_ms;
 
     rslt = kx022_init(_kx022_dev);
-    if (rslt == KX022_OK)
-    {
-        LOG_I("CHIP ID=0x%02x", _kx022_dev->chip_id);
-        rslt = kx022_soft_reset(_kx022_dev);	//TODO, how to do soft reset?
-
-        /* Select the type of configuration to be modified */
-        conf.type = KX022_ACCEL;
-#if 0
-        /* Get the accelerometer configurations which are set in the sensor */
-        rslt = kx022_get_sensor_conf(&conf, 1, _kx022_dev);
-
-        /* Modify the desired configurations as per macros
-         * available in kx022_defs.h file */
-        conf.param.accel.odr = KX022_ODR_125HZ;
-        conf.param.accel.range = KX022_2G_RANGE;
-
-        kx022_set_power_mode(KX022_SLEEP_MODE, _kx022_dev);
-#endif
-        return _kx022_dev;
-    }
-    else
+    if (rslt != KX022_OK)
     {
         LOG_E("kx022 init failed, %d", rslt);
         rt_free(_kx022_dev);
         return RT_NULL;
     }
+    
+    LOG_I("CHIP ID=0x%02x", _kx022_dev->chip_id);
+
+    
+    /* Select the type of configuration to be modified */
+    conf.type = KX022_ACCEL;
+
+    /* Get the accelerometer configurations which are set in the sensor */
+    rslt = kx022_get_sensor_conf(&conf, 1, _kx022_dev);
+
+    /* Modify the desired configurations as per macros
+     * available in kx022_defs.h file */
+    conf.param.accel.odr = KX022_ODR_100HZ;
+    conf.param.accel.range = KX022_2G_RANGE;
+
+    /* Set the desired configurations to the sensor */
+    kx022_set_sensor_conf(&conf, 1, _kx022_dev);
+    
+    kx022_set_power_mode(KX022_SLEEP_MODE, _kx022_dev);
+
+    rslt = kx022_set_reg_bitfield(KX022_CNTL1_ADDR, 0x80, 0x80, _kx022_dev);        //put kx022 in operating mode
+    
+    return _kx022_dev;
 }
 
 static rt_err_t _kx022_set_odr(rt_sensor_t sensor, rt_uint16_t odr)
@@ -126,27 +129,29 @@ static rt_err_t _kx022_set_odr(rt_sensor_t sensor, rt_uint16_t odr)
     uint8_t odr_ctr;
 
     if (odr == 1)
-        odr_ctr = KX022_ODR_1_HZ;
+        odr_ctr = KX022_ODR_0_781HZ;
     else if (odr <= 2)
-        odr_ctr = KX022_ODR_1_95HZ;
+        odr_ctr = KX022_ODR_1_563HZ;
     else if (odr <= 4)
-        odr_ctr = KX022_ODR_3_9HZ;
+        odr_ctr = KX022_ODR_3_125HZ;
     else if (odr <= 8)
-        odr_ctr = KX022_ODR_7_81HZ;
+        odr_ctr = KX022_ODR_6_25HZ;
     else if (odr <= 16)
-        odr_ctr = KX022_ODR_15_63HZ;
+        odr_ctr = KX022_ODR_12_5_HZ;
     else if (odr <= 32)
-        odr_ctr = KX022_ODR_31_25HZ;
+        odr_ctr = KX022_ODR_25HZ;
     else if (odr <= 63)
-        odr_ctr = KX022_ODR_62_5HZ;
+        odr_ctr = KX022_ODR_50HZ;
     else if (odr <= 125)
-        odr_ctr = KX022_ODR_125HZ;
+        odr_ctr = KX022_ODR_100HZ;
     else if (odr <= 250)
-        odr_ctr = KX022_ODR_250HZ;
+        odr_ctr = KX022_ODR_200HZ;
     else if (odr <= 500)
-        odr_ctr = KX022_ODR_500HZ;
+        odr_ctr = KX022_ODR_400HZ;
+    else if (odr <= 1000)
+        odr_ctr = KX022_ODR_800HZ;
     else
-        odr_ctr = KX022_ODR_1000HZ;
+        odr_ctr = KX022_ODR_1600HZ;
 
     if (sensor->info.type == RT_SENSOR_CLASS_ACCE)
     {
