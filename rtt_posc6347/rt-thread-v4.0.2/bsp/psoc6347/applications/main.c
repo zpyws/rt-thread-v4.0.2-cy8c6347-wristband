@@ -12,18 +12,13 @@
 #include <rtdevice.h>
 #include <board.h>
 
-#define MOTOR_PIN    GET_PIN(5, 3)
-
 int main(void)
 {
     int count = 1;
-    rt_pin_mode(MOTOR_PIN, PIN_MODE_OUTPUT);
 
     while (count++)
     {
-        rt_pin_write(MOTOR_PIN, PIN_HIGH);
         rt_thread_mdelay(500);
-        rt_pin_write(MOTOR_PIN, PIN_LOW);
         rt_thread_mdelay(500);
     }
 
