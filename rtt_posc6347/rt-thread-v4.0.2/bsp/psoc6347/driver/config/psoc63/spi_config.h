@@ -22,8 +22,9 @@ extern "C" {
 #ifndef SPI1_BUS_CONFIG
 #define SPI1_BUS_CONFIG                             \
     {                                               \
-        .Instance = SPI1,                           \
         .bus_name = "spi1",                         \
+        .base = SCB1,                               \
+        .init = SPI1_Start,                         \
     }
 #endif /* SPI1_BUS_CONFIG */
 #endif /* BSP_USING_SPI1 */
@@ -56,8 +57,9 @@ extern "C" {
 #ifndef SPI2_BUS_CONFIG
 #define SPI2_BUS_CONFIG                             \
     {                                               \
-        .Instance = SPI2,                           \
         .bus_name = "spi2",                         \
+        .base = SCB2,                               \
+        .init = SPI2_Start,                         \
     }
 #endif /* SPI2_BUS_CONFIG */
 #endif /* BSP_USING_SPI2 */

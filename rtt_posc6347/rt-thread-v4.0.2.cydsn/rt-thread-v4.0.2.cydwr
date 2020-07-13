@@ -31,10 +31,10 @@
       <Data key="ba1f5150-a36c-4730-8c7a-853228e2d2ab/6ab54762-7779-4044-8f78-8f0c3cc17648" value="SPI3_mosi_m" />
       <Data key="ba1f5150-a36c-4730-8c7a-853228e2d2ab/626488ba-448e-4b1b-8f21-ab800fa641d3" value="SPI3_sclk_m" />
       <Data key="ba1f5150-a36c-4730-8c7a-853228e2d2ab/c8948441-ff15-42a0-9e51-75869d2ef747" value="SPI3_miso_m" />
-      <Data key="cefc48ad-ff1e-43ef-8f36-28ae362efff6/a4be9008-37b4-491d-b0dd-3133671a9d3f" value="USBD1_Dm" />
-      <Data key="cefc48ad-ff1e-43ef-8f36-28ae362efff6/a61270bc-07ec-447d-ac9e-34cfe85c30e9" value="USBD1_Dp" />
-      <Data key="d28a5938-7af9-4e97-afe8-5446b6b9b869/2aab8a93-e7dd-4bd4-8210-42652cd079c5" value="GSENSOR_COMPASS_I2C_sda" />
-      <Data key="d28a5938-7af9-4e97-afe8-5446b6b9b869/69c3b5e8-b094-4d65-b96b-9f4f3a9a8641" value="GSENSOR_COMPASS_I2C_scl" />
+      <Data key="cefc48ad-ff1e-43ef-8f36-28ae362efff6/a4be9008-37b4-491d-b0dd-3133671a9d3f" value="USBD_Dm" />
+      <Data key="cefc48ad-ff1e-43ef-8f36-28ae362efff6/a61270bc-07ec-447d-ac9e-34cfe85c30e9" value="USBD_Dp" />
+      <Data key="d28a5938-7af9-4e97-afe8-5446b6b9b869/2aab8a93-e7dd-4bd4-8210-42652cd079c5" value="I2C1_sda" />
+      <Data key="d28a5938-7af9-4e97-afe8-5446b6b9b869/69c3b5e8-b094-4d65-b96b-9f4f3a9a8641" value="I2C1_scl" />
     </Group>
   </Group>
   <Group key="M0S8Clock">
@@ -871,12 +871,12 @@
     </Group>
     <Group key="ba1f5150-a36c-4730-8c7a-853228e2d2ab/6ab54762-7779-4044-8f78-8f0c3cc17648">
       <Group key="0">
-        <Data key="Port Format" value="6,0" />
+        <Data key="Port Format" value="10,0" />
       </Group>
     </Group>
     <Group key="ba1f5150-a36c-4730-8c7a-853228e2d2ab/626488ba-448e-4b1b-8f21-ab800fa641d3">
       <Group key="0">
-        <Data key="Port Format" value="6,2" />
+        <Data key="Port Format" value="10,2" />
       </Group>
     </Group>
     <Group key="ba1f5150-a36c-4730-8c7a-853228e2d2ab/c8948441-ff15-42a0-9e51-75869d2ef747">

@@ -6,7 +6,7 @@
 
 /* RT-Thread Kernel */
 
-#define RT_NAME_MAX 8
+#define RT_NAME_MAX 12
 #define RT_ALIGN_SIZE 4
 #define RT_THREAD_PRIORITY_32
 #define RT_THREAD_PRIORITY_MAX 32
@@ -204,6 +204,8 @@
 
 /* peripheral libraries and drivers */
 
+#define BSP_USING_SPI1
+#define BSP_USING_SPI3
 
 /* miscellaneous packages */
 
@@ -228,7 +230,6 @@
 #define BSP_USING_UART
 #define BSP_USING_UART6
 #define BSP_USING_SPI
-#define BSP_USING_SPI3
 #define BSP_USING_QSPI
 #define BSP_USING_I2C
 #define BSP_USING_I2C1
