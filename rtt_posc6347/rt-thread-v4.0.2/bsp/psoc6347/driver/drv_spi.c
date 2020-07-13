@@ -264,9 +264,9 @@ static rt_uint32_t spixfer(struct rt_spi_device *device, struct rt_spi_message *
     struct cy8c63_spi *spi_drv =  rt_container_of(device->bus, struct cy8c63_spi, spi_bus);
     struct cy8c63_hw_spi_cs *cs = device->parent.user_data;
 
-    if ((message->cs_take)&&(cs->GPIOx))
+    if ((message->cs_take)&&(cs->pin))
     {
-        Cy_GPIO_Write(cs->GPIOx, cs->GPIO_Pin, 0);
+        rt_pin_write(cs->pin, PIN_LOW);
     }
 
     LOG_D("%s transfer prepare and start", spi_drv->config->bus_name);
@@ -349,9 +349,9 @@ static rt_uint32_t spixfer(struct rt_spi_device *device, struct rt_spi_message *
            is ongoing. */
     }
 
-    if ((message->cs_take)&&(cs->GPIOx))
+    if ((message->cs_take)&&(cs->pin))
     {
-        Cy_GPIO_Write(cs->GPIOx, cs->GPIO_Pin, 1);
+        rt_pin_write(cs->pin, PIN_HIGH);
     }
 
     return message->length;
@@ -474,7 +474,7 @@ static int rt_hw_spi_bus_init(void)
 /**
   * Attach the spi device to SPI bus, this function must be used after initialization.
   */
-rt_err_t rt_hw_spi_device_attach(const char *bus_name, const char *device_name, GPIO_PRT_Type *cs_gpiox, uint16_t cs_gpio_pin)
+rt_err_t rt_hw_spi_device_attach(const char *bus_name, const char *device_name, uint16_t cs_gpio_pin)
 {
     RT_ASSERT(bus_name != RT_NULL);
     RT_ASSERT(device_name != RT_NULL);
@@ -499,8 +499,7 @@ rt_err_t rt_hw_spi_device_attach(const char *bus_name, const char *device_name, 
     RT_ASSERT(spi_device != RT_NULL);
     cs_pin = (struct cy8c63_hw_spi_cs *)rt_malloc(sizeof(struct cy8c63_hw_spi_cs));
     RT_ASSERT(cs_pin != RT_NULL);
-    cs_pin->GPIOx = cs_gpiox;
-    cs_pin->GPIO_Pin = cs_gpio_pin;
+    cs_pin->pin = cs_gpio_pin;
     result = rt_spi_bus_attach_device(spi_device, device_name, bus_name, (void *)cs_pin);
 
     if (result != RT_EOK)

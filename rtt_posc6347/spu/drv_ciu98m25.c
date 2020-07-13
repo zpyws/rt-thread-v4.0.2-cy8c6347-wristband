@@ -19,7 +19,7 @@ static int device_ciu98m25_init(void)
 
     rt_pin_mode(SPU_CS_PIN, PIN_MODE_OUTPUT);
 
-	result = rt_hw_spi_device_attach("spi3", "spu", __CY8C_PORT(6), 3);
+	result = rt_hw_spi_device_attach("spi3", "spu", SPU_CS_PIN);
 	if (result != RT_EOK)
 	{
 		return result;
