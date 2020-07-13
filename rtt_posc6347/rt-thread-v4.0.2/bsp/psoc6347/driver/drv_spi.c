@@ -250,7 +250,7 @@ static rt_err_t cy8c63_spi_init(struct cy8c63_spi *spi_drv, struct rt_spi_config
 //by yangwensen@20200323
 static rt_uint32_t spixfer(struct rt_spi_device *device, struct rt_spi_message *message)
 {
-    int state;
+    int state = 0;
     rt_size_t message_length, already_send_length;
     rt_uint16_t send_length;
     rt_uint8_t *recv_buf;
@@ -307,6 +307,7 @@ static rt_uint32_t spixfer(struct rt_spi_device *device, struct rt_spi_message *
             else
             {
                 Cy_SCB_SPI_WriteArrayBlocking(spi_drv->config->base, (uint8_t *)send_buf, send_length);
+                while( !Cy_SCB_IsTxComplete(spi_drv->config->base) );
                 state = (Cy_SCB_SPI_ReadArray(spi_drv->config->base, (uint8_t *)recv_buf, send_length)==send_length) ? 0 : 1;
             }
         }
@@ -319,6 +320,7 @@ static rt_uint32_t spixfer(struct rt_spi_device *device, struct rt_spi_message *
             else
             {
                 Cy_SCB_SPI_WriteArrayBlocking(spi_drv->config->base, (uint8_t *)send_buf, send_length);
+                while( !Cy_SCB_IsTxComplete(spi_drv->config->base) );
             }
         }
         else
