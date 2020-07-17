@@ -3,7 +3,7 @@
 #include "drv_ft2201.h"
 
 #define SPI_BUS_NAME                "spi1"
-#define SPI_OLED_DEVICE_NAME        "oled"
+#define SPI_OLED_DEVICE_NAME        "lcd"
 #define DC_PIN   					GET_PIN(12,3)   
 /*RES_PIN reset signal input. When the pin is low,
 initialization of the chip is executed.*/
