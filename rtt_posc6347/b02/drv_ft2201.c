@@ -1,15 +1,12 @@
 //created by yangwensen@20200713
 #include "board.h"          
 #include "drv_ft2201.h"
+#include "lcd_port.h"
 
-#define SPI_BUS_NAME                "spi1"
-#define SPI_OLED_DEVICE_NAME        "lcd"
-#define DC_PIN   					GET_PIN(12,3)   
-/*RES_PIN reset signal input. When the pin is low,
-initialization of the chip is executed.*/
-#define RES_PIN						GET_PIN(12,1)    
-#define CS_PIN						GET_PIN(10,3)    
-#define PWR_PIN						GET_PIN(12,4)    
+#define DRV_DEBUG
+#define LOG_TAG             "drv.lcd"
+#include <drv_log.h>
+
 
 #define OLED_DEBUG
 
@@ -36,6 +33,15 @@ struct cy8c_hw_spi_cs
     uint8_t pin;
 };
 
+struct drv_ft2201_device
+{
+    struct rt_device parent;
+    struct rt_device_graphic_info lcd_info;
+    struct rt_semaphore lcd_lock;
+//    rt_uint8_t *framebuffer;
+};
+
+struct drv_ft2201_device _lcd;
 static struct rt_spi_device spi_dev_ft2201;
 static struct cy8c_hw_spi_cs  spi_cs;
 
@@ -121,7 +127,39 @@ void ft2201_lcd_goto_sleep(void)
     OLED_TRACE("oled go to sleep mode!\n");
 }
 //===============================================================================================================================
-static int rt_hw_ft2201_init(void)
+//by yangwensen@20200721
+rt_inline void set_xy(uint8 xs, uint8 xe, uint8 ys, uint8 ye)
+{
+    lcd_write_cmd(0x2a);        //set column address
+    lcd_write_data(0);
+    lcd_write_data(xs);
+    lcd_write_data(0);
+    lcd_write_data(xe);
+
+    lcd_write_cmd(0x2b);        //set page address
+    lcd_write_data(0);
+    lcd_write_data(ys);
+    lcd_write_data(0);
+    lcd_write_data(ye);
+}
+//===============================================================================================================================
+//by yangwensen@20200721
+void ft2201_test(void)
+{
+#if 0
+    uint32 i;
+    
+    set_xy(30, 90, 60, 239);
+    
+    lcd_write_cmd(0x2c);        //memory write
+    for(i=0; i<240*60; i++)
+    {
+        lcd_write_data(0xff);
+    }
+#endif
+}
+//===============================================================================================================================
+static int ft2201_init(void)
 {
     rt_hw_ft2201_config();
 
@@ -1335,8 +1373,246 @@ static int rt_hw_ft2201_init(void)
 	ft2201_lcd_set_brightness(170);
 
     OLED_TRACE("ft2201_init done\r\n");
+    
+    ft2201_test();
 
     return 0;
 }
-INIT_PREV_EXPORT(rt_hw_ft2201_init);
+//INIT_PREV_EXPORT(rt_hw_ft2201_init);
 
+//by yangwensen@20200721
+static void drv_lcd_rect_update(struct drv_ft2201_device *lcd, struct rt_device_rect_info *rect_info)
+{
+    uint32 bytes;
+    uint8 *p;
+#if 0    
+    set_xy(rect_info->x, rect_info->x + rect_info->width, rect_info->y, rect_info->y + rect_info->height);
+    
+    bytes = (rect_info->width * rect_info->height) * (lcd->lcd_info.bits_per_pixel / 8);
+#else
+    set_xy(0, 119, 0, 239);
+    bytes = LCD_BUF_SIZE;
+#endif
+    p = lcd->lcd_info.framebuffer;
+
+    lcd_write_cmd(0x2c);        //memory write
+    while(bytes--)
+    {
+        lcd_write_data(*p++);
+    }
+}
+static rt_err_t drv_lcd_init(struct rt_device *device)
+{
+    struct drv_ft2201_device *lcd = (struct drv_ft2201_device *)device;
+    /* nothing, right now */
+    lcd = lcd;
+    return RT_EOK;
+}
+
+static rt_err_t drv_lcd_control(struct rt_device *device, int cmd, void *args)
+{
+    rt_err_t ret = RT_EOK;
+    struct drv_ft2201_device *lcd = (struct drv_ft2201_device *)device;
+    struct rt_device_rect_info* rect_info = (struct rt_device_rect_info*)args;
+    
+    switch (cmd)
+    {
+        case RTGRAPHIC_CTRL_RECT_UPDATE:
+        #if 0
+            if(!rect_info)
+            {
+                LOG_E("RTGRAPHIC_CTRL_RECT_UPDATE error args");
+                return -RT_ERROR;
+            }
+        #endif
+            LOG_D("RTGRAPHIC_CTRL_RECT_UPDATE");
+            drv_lcd_rect_update(lcd, rect_info);
+//            rt_kprintf("====> rect_info : %d %d %d %d\n", rect_info->x, rect_info->y, rect_info->width, rect_info->height);
+            break;
+
+        case RTGRAPHIC_CTRL_POWERON:
+            rt_pin_write(PWR_PIN, PIN_HIGH);
+            break;
+            
+        case RTGRAPHIC_CTRL_POWEROFF:
+            rt_pin_write(PWR_PIN, PIN_LOW);
+            break;
+#if 0        
+        case RTGRAPHIC_CTRL_GET_INFO:
+        {
+            struct rt_device_graphic_info *info = (struct rt_device_graphic_info *)args;
+
+            RT_ASSERT(info != RT_NULL);
+            info->pixel_format  = lcd->lcd_info.pixel_format;
+            info->bits_per_pixel = lcd->lcd_info.bits_per_pixel;
+            info->width         = lcd->lcd_info.width;
+            info->height        = lcd->lcd_info.height;
+            info->framebuffer   = lcd->lcd_info.framebuffer;
+        }
+        break;
+#endif
+        case RTGRAPHIC_CTRL_GET_INFO:
+            *(struct rt_device_graphic_info *)args = lcd->lcd_info;
+            break;
+
+        case RTGRAPHIC_CTRL_SET_MODE:
+            ret = -RT_ENOSYS;
+            break;
+            
+        case RTGRAPHIC_CTRL_GET_EXT:
+            ret = -RT_ENOSYS;
+            break;
+
+        default:
+            LOG_E("drv_lcd_control cmd: %d", cmd);
+            break;
+    }
+        
+    return ret;
+}
+
+#ifdef RT_USING_DEVICE_OPS
+const static struct rt_device_ops lcd_ops =
+{
+    drv_lcd_init,
+    RT_NULL,
+    RT_NULL,
+    RT_NULL,
+    RT_NULL,
+    drv_lcd_control
+};
+#endif
+
+int drv_lcd_hw_init(void)
+{
+    rt_err_t result = RT_EOK;
+    struct rt_device *device = &_lcd.parent;
+    
+    /* memset _lcd to zero */
+    memset(&_lcd, 0x00, sizeof(_lcd));
+
+    /* init lcd_lock semaphore */
+    result = rt_sem_init(&_lcd.lcd_lock, "lcd_lock", 0, RT_IPC_FLAG_FIFO);
+    if (result != RT_EOK)
+    {
+        LOG_E("init semaphore failed!\n");
+        result = -RT_ENOMEM;
+        goto __exit;
+    }
+
+    /* config LCD dev info */
+    _lcd.lcd_info.height = LCD_HEIGHT;
+    _lcd.lcd_info.width = LCD_WIDTH;
+    _lcd.lcd_info.bits_per_pixel = LCD_BITS_PER_PIXEL;
+    _lcd.lcd_info.pixel_format = LCD_PIXEL_FORMAT;
+
+    /* malloc memory */
+    _lcd.lcd_info.framebuffer = rt_malloc_align(LCD_BUF_SIZE, 8);
+    if (_lcd.lcd_info.framebuffer == RT_NULL)
+    {
+        LOG_E("init frame buffer failed!\n");
+        result = -RT_ENOMEM;
+        goto __exit;
+    }
+
+    /* memset buff to 0xFF */
+    memset(_lcd.lcd_info.framebuffer, 0xFF, LCD_BUF_SIZE);
+
+    device->type    = RT_Device_Class_Graphic;
+#ifdef RT_USING_DEVICE_OPS
+    device->ops     = &lcd_ops;
+#else
+    device->init    = drv_lcd_init;
+    device->control = drv_lcd_control;
+    device->user_data = (void *)&_lcd.lcd_info;     //by yangwensen
+#endif
+    
+    /* register lcd device */
+    rt_device_register(device, "lcd", RT_DEVICE_FLAG_RDWR);
+
+    if (ft2201_init() != RT_EOK)
+    {
+        result = -RT_ERROR;
+        goto __exit;
+    }
+    else
+    {
+//        turn_on_lcd_backlight();
+    }
+
+__exit:
+    if (result != RT_EOK)
+    {
+        rt_sem_delete(&_lcd.lcd_lock);
+
+        if (_lcd.lcd_info.framebuffer)
+        {
+            rt_free(_lcd.lcd_info.framebuffer);
+        }
+    }
+    return result;
+}
+INIT_DEVICE_EXPORT(drv_lcd_hw_init);
+
+#ifdef DRV_DEBUG
+#ifdef FINSH_USING_MSH
+int lcd_test()
+{
+    struct drv_ft2201_device *lcd;
+    lcd = (struct drv_ft2201_device *)rt_device_find("lcd");
+    rt_uint8_t *ptr = lcd->lcd_info.framebuffer;
+    while (1)
+    {
+        /* red */
+        for (unsigned long i = 0; i < LCD_BUF_SIZE/BYTES_PER_PIXEL; i++)
+        {
+            ptr[2 * i] = 0xf1;
+            ptr[2 * i + 1] = 0x00;
+        }
+        rt_device_control(&lcd->parent, RTGRAPHIC_CTRL_RECT_UPDATE, RT_NULL);
+        rt_thread_mdelay(1000);
+
+        /* green */
+        for (int i = 0; i < LCD_BUF_SIZE/BYTES_PER_PIXEL; i++)
+        {
+            ptr[2 * i] = 0x07;
+            ptr[2 * i + 1] = 0xe0;
+        }
+        rt_device_control(&lcd->parent, RTGRAPHIC_CTRL_RECT_UPDATE, RT_NULL);
+        rt_thread_mdelay(1000);
+
+        /* blue */
+        for (int i = 0; i < LCD_BUF_SIZE/BYTES_PER_PIXEL; i++)
+        {
+            ptr[2 * i] = 0x00;
+            ptr[2 * i + 1] = 0x1f;
+        }
+        rt_device_control(&lcd->parent, RTGRAPHIC_CTRL_RECT_UPDATE, RT_NULL);
+        rt_thread_mdelay(1000);
+    }
+}
+MSH_CMD_EXPORT(lcd_test, lcd_test);
+
+//draw a line in screen
+void line()
+{
+    struct drv_ft2201_device *lcd;
+    lcd = (struct drv_ft2201_device *)rt_device_find("lcd");
+    rt_uint8_t *ptr = lcd->lcd_info.framebuffer;
+
+        /* red */
+        for (unsigned long long i = LCD_BUF_SIZE/4/2; i <LCD_BUF_SIZE/4/2+390; i++)
+        {
+                ptr[4 * i] = 0x00;
+                ptr[4 * i + 1] = 0x00;
+                ptr[4 * i + 2] = 0xFF;
+                ptr[4 * i + 3] = 0xFF;
+        }
+        rt_device_control(&lcd->parent, RTGRAPHIC_CTRL_RECT_UPDATE, RT_NULL);
+
+
+}
+MSH_CMD_EXPORT(line, line);
+
+#endif /* FINSH_USING_MSH */
+#endif /* DRV_DEBUG */
