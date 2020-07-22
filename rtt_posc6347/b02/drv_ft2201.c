@@ -1385,21 +1385,34 @@ static void drv_lcd_rect_update(struct drv_ft2201_device *lcd, struct rt_device_
 {
     uint32 bytes;
     uint8 *p;
-#if 0    
-    set_xy(rect_info->x, rect_info->x + rect_info->width, rect_info->y, rect_info->y + rect_info->height);
-    
-    bytes = (rect_info->width * rect_info->height) * (lcd->lcd_info.bits_per_pixel / 8);
+#if 1    
+    uint8 i,j;
+    set_xy(rect_info->x, rect_info->x + rect_info->width -1, rect_info->y, rect_info->y + rect_info->height -1);
+//    bytes = (rect_info->width * rect_info->height) * (lcd->lcd_info.bits_per_pixel / 8);
 #else
-    set_xy(0, 119, 0, 239);
+//    set_xy(0, 119, 0, 239);
     bytes = LCD_BUF_SIZE;
 #endif
     p = lcd->lcd_info.framebuffer;
 
     lcd_write_cmd(0x2c);        //memory write
+#if 1
+    p = &lcd->lcd_info.framebuffer[(rect_info->y * LCD_WIDTH + rect_info->x) * 2];       //ÆðÊ¼×ù±ê
+    for(i=0; i<rect_info->height; i++)
+    {
+        p += (LCD_WIDTH*2);
+        for(j=0; j<rect_info->width; j++)
+        {
+            lcd_write_data(p[j*2+0]);
+            lcd_write_data(p[j*2+1]);
+        }
+    }
+#else    
     while(bytes--)
     {
         lcd_write_data(*p++);
     }
+#endif
 }
 static rt_err_t drv_lcd_init(struct rt_device *device)
 {
@@ -1418,16 +1431,14 @@ static rt_err_t drv_lcd_control(struct rt_device *device, int cmd, void *args)
     switch (cmd)
     {
         case RTGRAPHIC_CTRL_RECT_UPDATE:
-        #if 0
             if(!rect_info)
             {
                 LOG_E("RTGRAPHIC_CTRL_RECT_UPDATE error args");
                 return -RT_ERROR;
             }
-        #endif
-            LOG_D("RTGRAPHIC_CTRL_RECT_UPDATE");
+            else
+                LOG_D("====> rect_info : %d %d %d %d", rect_info->x, rect_info->y, rect_info->width, rect_info->height);
             drv_lcd_rect_update(lcd, rect_info);
-//            rt_kprintf("====> rect_info : %d %d %d %d\n", rect_info->x, rect_info->y, rect_info->width, rect_info->height);
             break;
 
         case RTGRAPHIC_CTRL_POWERON:
@@ -1561,6 +1572,8 @@ int lcd_test()
     struct drv_ft2201_device *lcd;
     lcd = (struct drv_ft2201_device *)rt_device_find("lcd");
     rt_uint8_t *ptr = lcd->lcd_info.framebuffer;
+    struct rt_device_rect_info rect_info = {0, 0, LCD_WIDTH, LCD_HEIGHT};
+    
     while (1)
     {
         /* red */
@@ -1569,7 +1582,7 @@ int lcd_test()
             ptr[2 * i] = 0xf1;
             ptr[2 * i + 1] = 0x00;
         }
-        rt_device_control(&lcd->parent, RTGRAPHIC_CTRL_RECT_UPDATE, RT_NULL);
+        rt_device_control(&lcd->parent, RTGRAPHIC_CTRL_RECT_UPDATE, &rect_info);
         rt_thread_mdelay(1000);
 
         /* green */
@@ -1578,7 +1591,7 @@ int lcd_test()
             ptr[2 * i] = 0x07;
             ptr[2 * i + 1] = 0xe0;
         }
-        rt_device_control(&lcd->parent, RTGRAPHIC_CTRL_RECT_UPDATE, RT_NULL);
+        rt_device_control(&lcd->parent, RTGRAPHIC_CTRL_RECT_UPDATE, &rect_info);
         rt_thread_mdelay(1000);
 
         /* blue */
@@ -1587,7 +1600,7 @@ int lcd_test()
             ptr[2 * i] = 0x00;
             ptr[2 * i + 1] = 0x1f;
         }
-        rt_device_control(&lcd->parent, RTGRAPHIC_CTRL_RECT_UPDATE, RT_NULL);
+        rt_device_control(&lcd->parent, RTGRAPHIC_CTRL_RECT_UPDATE, &rect_info);
         rt_thread_mdelay(1000);
     }
 }
