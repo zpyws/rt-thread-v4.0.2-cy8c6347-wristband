@@ -9,11 +9,12 @@
       <Data key="9c7b4928-9e69-4c53-bdc2-88633ee1a8f4/b68e5b9d-7828-482d-a282-930f990e3b3e" value="UART6_SCBCLK" />
       <Data key="26a270ef-d524-4a8f-8147-304cf639fca7/6384d8e1-d448-4075-b77d-8097c7ed521b" value="QSPI1_HFClk2" />
       <Data key="46d13a80-3295-4230-83ad-26c6bc01d407/b68e5b9d-7828-482d-a282-930f990e3b3e" value="UART6_SCBCLK" />
-      <Data key="ba1f5150-a36c-4730-8c7a-853228e2d2ab/b68e5b9d-7828-482d-a282-930f990e3b3e" value="SPI3_SCBCLK" />
+      <Data key="53423efe-c241-46aa-9ab9-d3a5e81e9a8f/b68e5b9d-7828-482d-a282-930f990e3b3e" value="SPI3_SCBCLK" />
+      <Data key="ba1f5150-a36c-4730-8c7a-853228e2d2ab/b68e5b9d-7828-482d-a282-930f990e3b3e" value="SPI1_SCBCLK" />
       <Data key="bc50fbd0-01a1-4dc4-ae0e-420060acfa51/f7143d07-534d-4542-813a-8bb23ceb1ae9" value="SARADC_intSarClock" />
       <Data key="cefc48ad-ff1e-43ef-8f36-28ae362efff6/0b0b3647-28be-498f-8d8a-5add782fc38c" value="USBD_busRstClk" />
       <Data key="cefc48ad-ff1e-43ef-8f36-28ae362efff6/dd10a3bb-387b-4f90-a47f-ff23ce6f897f" value="USBD_devClk" />
-      <Data key="d28a5938-7af9-4e97-afe8-5446b6b9b869/b68e5b9d-7828-482d-a282-930f990e3b3e" value="GSENSOR_COMPASS_I2C_SCBCLK" />
+      <Data key="d28a5938-7af9-4e97-afe8-5446b6b9b869/b68e5b9d-7828-482d-a282-930f990e3b3e" value="I2C1_SCBCLK" />
     </Group>
     <Group key="Pin">
       <Data key="4cca878b-77b5-471d-8aeb-ad6925202455" value="HOME_KEY" />
@@ -134,18 +135,41 @@
         <Data key="start_on_reset" value="True" />
         <Data key="uses_fract_divider" value="False" />
       </Group>
-      <Group key="ba1f5150-a36c-4730-8c7a-853228e2d2ab/b68e5b9d-7828-482d-a282-930f990e3b3e">
+      <Group key="53423efe-c241-46aa-9ab9-d3a5e81e9a8f/b68e5b9d-7828-482d-a282-930f990e3b3e">
         <Data key="check_tolerance" value="True" />
         <Data key="derive_type" value="AUTO" />
-        <Data key="desired_freq" value="16" />
+        <Data key="desired_freq" value="4" />
         <Data key="desired_unit" value="6" />
-        <Data key="divider" value="4" />
+        <Data key="divider" value="13" />
         <Data key="enabled" value="True" />
         <Data key="fract_divider_denominator" value="0" />
         <Data key="fract_divider_numerator" value="0" />
         <Data key="minus_tolerance" value="100" />
         <Data key="name" value="SPI3_SCBCLK" />
         <Data key="netlist_name" value="\SPI3:SCBCLK\" />
+        <Data key="ph_align_clock_id" value="" />
+        <Data key="ph_align_clock_name" value="" />
+        <Data key="plus_tolerance" value="5" />
+        <Data key="scope" value="LOCAL" />
+        <Data key="sourceClk_minus_acuracy_name" value="1.2" />
+        <Data key="sourceClk_plus_acuracy_name" value="1.2" />
+        <Data key="src_clk_id" value="2FB4EC85-8328-4C5A-9ED9-8B63060178EB" />
+        <Data key="src_clk_name" value="Clk_Peri" />
+        <Data key="start_on_reset" value="True" />
+        <Data key="uses_fract_divider" value="False" />
+      </Group>
+      <Group key="ba1f5150-a36c-4730-8c7a-853228e2d2ab/b68e5b9d-7828-482d-a282-930f990e3b3e">
+        <Data key="check_tolerance" value="True" />
+        <Data key="derive_type" value="AUTO" />
+        <Data key="desired_freq" value="50" />
+        <Data key="desired_unit" value="6" />
+        <Data key="divider" value="1" />
+        <Data key="enabled" value="True" />
+        <Data key="fract_divider_denominator" value="0" />
+        <Data key="fract_divider_numerator" value="0" />
+        <Data key="minus_tolerance" value="100" />
+        <Data key="name" value="SPI1_SCBCLK" />
+        <Data key="netlist_name" value="\SPI1:SCBCLK\" />
         <Data key="ph_align_clock_id" value="" />
         <Data key="ph_align_clock_name" value="" />
         <Data key="plus_tolerance" value="5" />
@@ -237,8 +261,8 @@
         <Data key="fract_divider_denominator" value="0" />
         <Data key="fract_divider_numerator" value="0" />
         <Data key="minus_tolerance" value="5" />
-        <Data key="name" value="GSENSOR_COMPASS_I2C_SCBCLK" />
-        <Data key="netlist_name" value="\GSENSOR_COMPASS_I2C:SCBCLK\" />
+        <Data key="name" value="I2C1_SCBCLK" />
+        <Data key="netlist_name" value="\I2C1:SCBCLK\" />
         <Data key="ph_align_clock_id" value="" />
         <Data key="ph_align_clock_name" value="" />
         <Data key="plus_tolerance" value="127.8772378516624" />
@@ -268,7 +292,7 @@
         <Data key="sourceClk_plus_acuracy_name" value="0.25" />
         <Data key="src_clk_id" value="" />
         <Data key="src_clk_name" value="" />
-        <Data key="start_on_reset" value="False" />
+        <Data key="start_on_reset" value="True" />
         <Data key="trim_with" value="USB" />
       </Group>
       <Group key="1BBDCBF8-BEDC-475F-91D6-B7000D3ACFC0">
@@ -533,7 +557,7 @@
         <Data key="sourceClk_plus_acuracy_name" value="1.2" />
         <Data key="src_clk_id" value="90A0AFF0-F028-4772-9ECA-35D832B188BB" />
         <Data key="src_clk_name" value="PathMux0" />
-        <Data key="start_on_reset" value="False" />
+        <Data key="start_on_reset" value="True" />
       </Group>
       <Group key="627FD272-4308-4363-80FD-BD4E238E9E1E">
         <Data key="check_tolerance" value="False" />
