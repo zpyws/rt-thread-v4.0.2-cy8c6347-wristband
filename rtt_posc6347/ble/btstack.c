@@ -5,6 +5,8 @@
 #define LOG_TAG                         "BLE"
 #define LOG_LVL                         LOG_LVL_DBG
 #include <ulog.h>
+
+#include <stdlib.h>
 //***************************************************************************************************************************
 typedef enum
 {
@@ -35,9 +37,8 @@ void static StackEventHandler(uint32_t event, void *eventParam)
         *                       Generic and HCI Events
         ***********************************************************/
         case CY_BLE_EVT_STACK_ON: /* This event received when component is started */
-            LOG_D("CY_BLE_EVT_STACK_ON, StartAdvertisement");
+            LOG_D("CY_BLE_EVT_STACK_ON");
             
-             /* Start advertisement */
             apiResult = Cy_BLE_GAPP_StartAdvertisement(CY_BLE_ADVERTISING_FAST, CY_BLE_PERIPHERAL_CONFIGURATION_0_INDEX);
             if(apiResult != CY_BLE_SUCCESS)
             {
@@ -45,7 +46,6 @@ void static StackEventHandler(uint32_t event, void *eventParam)
             }
             break;
             
-        /* This event is received when there is a timeout */
         case CY_BLE_EVT_TIMEOUT:
         {
             LOG_E("CY_BLE_EVT_TIMEOUT");
@@ -109,7 +109,7 @@ void static StackEventHandler(uint32_t event, void *eventParam)
         *                       GAP Events
         ***********************************************************/
         case CY_BLE_EVT_GAPP_ADVERTISEMENT_START_STOP:
-            if(Cy_BLE_GetAdvertisementState() == CY_BLE_ADV_STATE_ADVERTISING )
+            if( Cy_BLE_GetAdvertisementState() == CY_BLE_ADV_STATE_ADVERTISING )
                 LOG_D("CY_BLE_ADV_STATE_ADVERTISING");
             else
                 LOG_D("CY_BLE_ADV_STATE_STOPPED");
@@ -176,6 +176,44 @@ static int8_t ble_stack_init(void)
     
     return 0;
 }
+//***************************************************************************************************************************
+//by yangwensen@20200724
+static void ble_adv(uint8_t argc, char **argv)
+{
+    uint32_t action;
+    cy_en_ble_api_result_t apiResult;
+    cy_en_ble_adv_state_t state;
+    
+    if(argc != 2)
+    {
+        rt_kprintf("[Y]bad parameter! ble_adv (0|1)\n");
+        return;
+    }
+    
+    action = strtol(argv[1], NULL, 0);
+    if(action > 1)
+    {
+        rt_kprintf("[Y]bad parameter! ble_adv (0|1)\n");
+        return;
+    }
+    
+    state = Cy_BLE_GetAdvertisementState();
+    LOG_D("Cy_BLE_GetAdvertisementState()=%d", state);
+    
+    if( (action==0) && (state == CY_BLE_ADV_STATE_ADVERTISING) )
+    {
+        apiResult = Cy_BLE_GAPP_StopAdvertisement();
+        if(apiResult != CY_BLE_SUCCESS)
+            LOG_E("Cy_BLE_GAPP_StopAdvertisement() Error: %x", apiResult);
+    }
+    else if( (action==1) && (state == CY_BLE_ADV_STATE_STOPPED) )
+    {
+        apiResult = Cy_BLE_GAPP_StartAdvertisement(CY_BLE_ADVERTISING_FAST, CY_BLE_PERIPHERAL_CONFIGURATION_0_INDEX);
+        if(apiResult != CY_BLE_SUCCESS)
+            LOG_E("Cy_BLE_GAPP_StartAdvertisement() Error: %x", apiResult);
+    }
+}
+MSH_CMD_EXPORT(ble_adv, ble_advertisement[enable|disable]);
 //***************************************************************************************************************************
 //by yangwensen@20200723
 static rt_bool_t _stack_init(void)
