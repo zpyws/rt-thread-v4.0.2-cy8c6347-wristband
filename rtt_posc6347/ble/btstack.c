@@ -10,8 +10,8 @@
 //***************************************************************************************************************************
 typedef enum
 {
-    STACK_EV_DISCON = 1,
-    STACK_EV_DISPATCH = 2,
+    STACK_EV_DISPATCH = 1,
+    STACK_EV_FLASH_WRITE_REQ = 2,
     STACK_EV_KEY = 4,
 } STACK_EV_E;
 
@@ -104,8 +104,14 @@ void static StackEventHandler(uint32_t event, void *eventParam)
             break;
         
         case CY_BLE_EVT_GATTS_XCNHG_MTU_REQ:
+        {
+            cy_stc_ble_gatt_xchg_mtu_param_t mtu;
+
+            Cy_BLE_GATT_GetMtuSize(&mtu);
+            LOG_D("CY_BLE_EVT_GATTS_XCNHG_MTU_REQ, final mtu= %d", mtu.mtu);
             LOG_D("CY_BLE_EVT_GATTS_XCNHG_MTU_REQ: GATT Client RX MTU = %d", ((cy_stc_ble_gatt_xchg_mtu_param_t *)eventParam)->mtu);
-            break;
+        }
+        break;
 
         case CY_BLE_EVT_GATTS_READ_CHAR_VAL_ACCESS_REQ:
             LOG_D("CY_BLE_EVT_GATTS_READ_CHAR_VAL_ACCESS_REQ, attHandle: %d", ((cy_stc_ble_gatts_char_val_read_req_t *)eventParam)->attrHandle);
@@ -198,6 +204,7 @@ void static StackEventHandler(uint32_t event, void *eventParam)
     ***********************************************************/
         case CY_BLE_EVT_PENDING_FLASH_WRITE:
             LOG_D("CY_BLE_EVT_PENDING_FLASH_WRITE");
+            rt_event_send(stack_event, STACK_EV_FLASH_WRITE_REQ);
             break;
             
         default:
@@ -306,12 +313,34 @@ static void task_ble(void *parameter)
     
     for (;;)
     {
-        rt_event_recv(stack_event, STACK_EV_DISCON | STACK_EV_DISPATCH | STACK_EV_KEY,
+        rt_event_recv(stack_event, STACK_EV_FLASH_WRITE_REQ | STACK_EV_DISPATCH | STACK_EV_KEY,
                     RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR, RT_WAITING_FOREVER, &event);
 
         if (event & STACK_EV_DISPATCH)
         {
             Cy_BLE_ProcessEvents();
+        }
+        
+        if(event & STACK_EV_FLASH_WRITE_REQ)
+        {
+            cy_en_ble_api_result_t apiResult;
+            
+        #if(CY_BLE_BONDING_REQUIREMENT == CY_BLE_BONDING_YES)
+            if(cy_ble_pendingFlashWrite != 0u) 
+            {   
+                apiResult = Cy_BLE_StoreBondingData();
+                if(apiResult==CY_BLE_SUCCESS)
+                    LOG_I("Store bonding data success");
+                else if(apiResult==CY_BLE_INFO_FLASH_WRITE_IN_PROGRESS)
+                {
+                    LOG_W("Store bonding data in process");
+                    if(cy_ble_pendingFlashWrite)
+                        rt_event_send(stack_event, STACK_EV_FLASH_WRITE_REQ);
+                }
+                else
+                    LOG_E("Store bonding data, status: %x, pending: %x", apiResult, cy_ble_pendingFlashWrite);
+            }
+        #endif /* CY_BLE_BONDING_REQUIREMENT == CY_BLE_BONDING_YES */
         }
     }
 }
