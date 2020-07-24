@@ -102,6 +102,9 @@ void static StackEventHandler(uint32_t event, void *eventParam)
             appConnHandle.bdHandle = 0u;
             break;
         
+        case CY_BLE_EVT_GATTS_XCNHG_MTU_REQ:
+            LOG_D("CY_BLE_EVT_GATTS_XCNHG_MTU_REQ: GATT Client RX MTU = %d", ((cy_stc_ble_gatt_xchg_mtu_param_t *)eventParam)->mtu);
+            break;
         /**********************************************************
         *                       GAP Events
         ***********************************************************/
