@@ -28,6 +28,7 @@ void static BleControllerInterruptEventHandler(void)
 void static StackEventHandler(uint32_t event, void *eventParam)
 {
     cy_en_ble_api_result_t apiResult;
+    cy_stc_ble_gap_auth_info_t *authInfo;
     
     (void)eventParam;
     
@@ -105,6 +106,11 @@ void static StackEventHandler(uint32_t event, void *eventParam)
         case CY_BLE_EVT_GATTS_XCNHG_MTU_REQ:
             LOG_D("CY_BLE_EVT_GATTS_XCNHG_MTU_REQ: GATT Client RX MTU = %d", ((cy_stc_ble_gatt_xchg_mtu_param_t *)eventParam)->mtu);
             break;
+
+        case CY_BLE_EVT_GATTS_READ_CHAR_VAL_ACCESS_REQ:
+            LOG_D("CY_BLE_EVT_GATTS_READ_CHAR_VAL_ACCESS_REQ, attHandle: %d", ((cy_stc_ble_gatts_char_val_read_req_t *)eventParam)->attrHandle);
+            break;
+            
         /**********************************************************
         *                       GAP Events
         ***********************************************************/
@@ -126,12 +132,66 @@ void static StackEventHandler(uint32_t event, void *eventParam)
         case CY_BLE_EVT_GAP_DEVICE_DISCONNECTED:
             LOG_E("CY_BLE_EVT_GAP_DEVICE_DISCONNECTED");
             
-            /* Enter discoverable mode so that remote Client could find device */
             apiResult = Cy_BLE_GAPP_StartAdvertisement(CY_BLE_ADVERTISING_FAST, CY_BLE_PERIPHERAL_CONFIGURATION_0_INDEX);
             if(apiResult != CY_BLE_SUCCESS)
             {
                 LOG_E("StartAdvertisement API Error: %d", apiResult);
             }
+            break;
+            
+        case CY_BLE_EVT_GAP_AUTH_REQ:
+            LOG_D("CY_BLE_EVT_GAP_AUTH_REQ: security=0x%x, bonding=0x%x, ekeySize=0x%x, err=0x%x",
+                    (*(cy_stc_ble_gap_auth_info_t *)eventParam).security,
+                    (*(cy_stc_ble_gap_auth_info_t *)eventParam).bonding,
+                    (*(cy_stc_ble_gap_auth_info_t *)eventParam).ekeySize,
+                    (*(cy_stc_ble_gap_auth_info_t *)eventParam).authErr);
+            
+            if(cy_ble_configPtr->authInfo[CY_BLE_SECURITY_CONFIGURATION_0_INDEX].security == (CY_BLE_GAP_SEC_MODE_1 | CY_BLE_GAP_SEC_LEVEL_1))
+            {
+                cy_ble_configPtr->authInfo[CY_BLE_SECURITY_CONFIGURATION_0_INDEX].authErr = CY_BLE_GAP_AUTH_ERROR_PAIRING_NOT_SUPPORTED;
+            }
+            
+            cy_ble_configPtr->authInfo[CY_BLE_SECURITY_CONFIGURATION_0_INDEX].bdHandle = ((cy_stc_ble_gap_auth_info_t *)eventParam)->bdHandle;
+            
+            apiResult = Cy_BLE_GAPP_AuthReqReply(&cy_ble_configPtr->authInfo[CY_BLE_SECURITY_CONFIGURATION_0_INDEX]);
+            if(apiResult != CY_BLE_SUCCESS)
+            {
+                LOG_E("Cy_BLE_GAPP_AuthReqReply() Error: %x, call Cy_BLE_GAP_RemoveOldestDeviceFromBondedList", apiResult);
+                apiResult = Cy_BLE_GAP_RemoveOldestDeviceFromBondedList();
+                if(apiResult != CY_BLE_SUCCESS)
+                    LOG_E("Cy_BLE_GAP_RemoveOldestDeviceFromBondedList API Error: %x", apiResult);
+                else
+                {
+                    apiResult = Cy_BLE_GAPP_AuthReqReply(&cy_ble_configPtr->authInfo[CY_BLE_SECURITY_CONFIGURATION_0_INDEX]);            
+                    if(apiResult != CY_BLE_SUCCESS)
+                    {
+                        LOG_E("Cy_BLE_GAPP_AuthReqReply API Error: %x", apiResult);
+                    }
+                }
+            }
+            break;
+           
+        case CY_BLE_EVT_GAP_SMP_NEGOTIATED_AUTH_INFO:
+            LOG_D("CY_BLE_EVT_GAP_SMP_NEGOTIATED_AUTH_INFO: security:%x, bonding:%x, ekeySize:%x, authErr %x", 
+                (*(cy_stc_ble_gap_auth_info_t *)eventParam).security, 
+                (*(cy_stc_ble_gap_auth_info_t *)eventParam).bonding, 
+                (*(cy_stc_ble_gap_auth_info_t *)eventParam).ekeySize, 
+                (*(cy_stc_ble_gap_auth_info_t *)eventParam).authErr);
+            break;
+            
+        case CY_BLE_EVT_GAP_AUTH_COMPLETE:
+            authInfo = (cy_stc_ble_gap_auth_info_t *)eventParam;
+            LOG_I("CY_BLE_EVT_GAP_AUTH_COMPLETE: security: 0x%x, bonding: 0x%x, ekeySize: 0x%x, authErr 0x%x \r\n",
+                                    authInfo->security, authInfo->bonding, authInfo->ekeySize, authInfo->authErr);
+            break;
+            
+        case CY_BLE_EVT_GAP_AUTH_FAILED:
+            LOG_D("CY_BLE_EVT_GAP_AUTH_FAILED: 0x%x", ((cy_stc_ble_gap_auth_info_t *)eventParam)->authErr);
+            break;
+            
+        case CY_BLE_EVT_GAP_ENCRYPT_CHANGE:
+            LOG_W("CY_BLE_EVT_GAP_ENCRYPT_CHANGE: encryption %s", 
+                ((cy_stc_ble_gap_encrypt_change_param_t *)((cy_stc_ble_events_param_generic_t *)eventParam)->eventParams)->encryption ? "on" : "off");
             break;
     /**********************************************************
     *                       Other Events
