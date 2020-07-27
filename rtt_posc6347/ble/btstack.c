@@ -7,6 +7,7 @@
 #include <ulog.h>
 
 #include <stdlib.h>
+#include "ancsc.h"
 //***************************************************************************************************************************
 typedef enum
 {
@@ -19,6 +20,9 @@ rt_event_t stack_event;
 
 cy_stc_ble_conn_handle_t appConnHandle;
 //***************************************************************************************************************************
+//外部函数
+void App_DisplayBondList(void);
+//***************************************************************************************************************************
 void static BleControllerInterruptEventHandler(void)
 {
     rt_event_send(stack_event, STACK_EV_DISPATCH);
@@ -29,6 +33,18 @@ void static StackEventHandler(uint32_t event, void *eventParam)
 {
     cy_en_ble_api_result_t apiResult;
     cy_stc_ble_gap_auth_info_t *authInfo;
+    static cy_stc_ble_gap_sec_key_info_t keyInfo =
+    {
+        .localKeysFlag    = CY_BLE_GAP_SMP_INIT_ENC_KEY_DIST | 
+                            CY_BLE_GAP_SMP_INIT_IRK_KEY_DIST | 
+                            CY_BLE_GAP_SMP_INIT_CSRK_KEY_DIST,
+        .exchangeKeysFlag = CY_BLE_GAP_SMP_INIT_ENC_KEY_DIST | 
+                            CY_BLE_GAP_SMP_INIT_IRK_KEY_DIST | 
+                            CY_BLE_GAP_SMP_INIT_CSRK_KEY_DIST |
+                            CY_BLE_GAP_SMP_RESP_ENC_KEY_DIST |
+                            CY_BLE_GAP_SMP_RESP_IRK_KEY_DIST |
+                            CY_BLE_GAP_SMP_RESP_CSRK_KEY_DIST,
+    };
     
     (void)eventParam;
     
@@ -45,6 +61,12 @@ void static StackEventHandler(uint32_t event, void *eventParam)
             {
                 LOG_E("Cy_BLE_GAPP_StartAdvertisement() Error: %d", apiResult);
             }
+
+            apiResult = Cy_BLE_GAP_GenerateKeys(&keyInfo);
+            if(apiResult != CY_BLE_SUCCESS)
+                LOG_E("Cy_BLE_GAP_GenerateKeys() Error: 0x%x", apiResult);
+            
+            App_DisplayBondList();
             break;
             
         case CY_BLE_EVT_TIMEOUT:
@@ -199,6 +221,12 @@ void static StackEventHandler(uint32_t event, void *eventParam)
             LOG_W("CY_BLE_EVT_GAP_ENCRYPT_CHANGE: encryption %s", 
                 ((cy_stc_ble_gap_encrypt_change_param_t *)((cy_stc_ble_events_param_generic_t *)eventParam)->eventParams)->encryption ? "on" : "off");
             break;
+            
+        case CY_BLE_EVT_GAP_KEYS_GEN_COMPLETE:
+            LOG_D("CY_BLE_EVT_GAP_KEYS_GEN_COMPLETE");
+            keyInfo.SecKeyParam = (*(cy_stc_ble_gap_sec_key_param_t *)eventParam);
+            break;
+            
     /**********************************************************
     *                       Other Events
     ***********************************************************/
@@ -238,6 +266,7 @@ static int8_t ble_stack_init(void)
                                          stackVersion.buildNumber);
 //----------------------------------------------------------------------------------------------
     Cy_BLE_RegisterAppHostCallback(BleControllerInterruptEventHandler);
+//    Cy_BLE_ANCS_RegisterAttrCallback(AncsCallBack);
 
     Cy_BLE_ProcessEvents();
     
