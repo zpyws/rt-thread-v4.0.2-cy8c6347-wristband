@@ -15,7 +15,7 @@ typedef enum
 {
     STACK_EV_DISPATCH = 1,
     STACK_EV_FLASH_WRITE_REQ = 2,
-    STACK_EV_KEY = 4,
+    STACK_EV_ANS = 4,
 } STACK_EV_E;
 
 rt_event_t stack_event;
@@ -286,7 +286,8 @@ void static StackEventHandler(uint32_t event, void *eventParam)
                     if(cy_ble_serverInfo[discIdx][i].range.startHandle < cy_ble_serverInfo[discIdx][i].range.endHandle)
                     {
                         LOG_I("The peer device supports ANS");
-//                        ancsFlag |= CY_BLE_ANCS_FLG_START;
+                        ancsFlag |= CY_BLE_ANCS_FLG_START;
+                        rt_event_send(stack_event, STACK_EV_ANS);
                     }
                     else
                         LOG_W("The peer device doesn't support ANS");
@@ -332,7 +333,7 @@ static int8_t ble_stack_init(void)
                                          stackVersion.buildNumber);
 //----------------------------------------------------------------------------------------------
     Cy_BLE_RegisterAppHostCallback(BleControllerInterruptEventHandler);
-//    Cy_BLE_ANCS_RegisterAttrCallback(AncsCallBack);
+    Cy_BLE_ANCS_RegisterAttrCallback(AncsCallBack);
 
     Cy_BLE_ProcessEvents();
     
@@ -423,7 +424,7 @@ static void task_ble(void *parameter)
     
     for (;;)
     {
-        rt_event_recv(stack_event, STACK_EV_FLASH_WRITE_REQ | STACK_EV_DISPATCH | STACK_EV_KEY,
+        rt_event_recv(stack_event, STACK_EV_FLASH_WRITE_REQ | STACK_EV_DISPATCH | STACK_EV_ANS,
                     RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR, RT_WAITING_FOREVER, &event);
 
         if (event & STACK_EV_DISPATCH)
@@ -451,6 +452,11 @@ static void task_ble(void *parameter)
                     LOG_E("Store bonding data, status: %x, pending: %x", apiResult, cy_ble_pendingFlashWrite);
             }
         #endif /* CY_BLE_BONDING_REQUIREMENT == CY_BLE_BONDING_YES */
+        }
+        
+        if(event & STACK_EV_ANS)
+        {
+            AncsProcess();
         }
     }
 }
