@@ -34,6 +34,7 @@ void static BleControllerInterruptEventHandler(void)
 //by yangwensen@20200723
 void static StackEventHandler(uint32_t event, void *eventParam)
 {
+    uint16_t i;
     cy_en_ble_api_result_t apiResult;
     cy_stc_ble_gap_auth_info_t *authInfo;
     static cy_stc_ble_gap_sec_key_info_t keyInfo =
@@ -48,6 +49,7 @@ void static StackEventHandler(uint32_t event, void *eventParam)
                             CY_BLE_GAP_SMP_RESP_IRK_KEY_DIST |
                             CY_BLE_GAP_SMP_RESP_CSRK_KEY_DIST,
     };
+    uint8_t discIdx = Cy_BLE_GetDiscoveryIdx(appConnHandle);
     
     (void)eventParam;
     
@@ -73,10 +75,8 @@ void static StackEventHandler(uint32_t event, void *eventParam)
             break;
             
         case CY_BLE_EVT_TIMEOUT:
-        {
-            LOG_E("CY_BLE_EVT_TIMEOUT");
+            LOG_E("CY_BLE_EVT_TIMEOUT: 0x%x", (((cy_stc_ble_timeout_param_t *)eventParam)->reasonCode));
             break;
-        }
         
         case CY_BLE_EVT_HARDWARE_ERROR:    /* This event indicates that some internal HW error has occurred */
             LOG_E("CY_BLE_EVT_HARDWARE_ERROR");
@@ -85,6 +85,7 @@ void static StackEventHandler(uint32_t event, void *eventParam)
         case CY_BLE_EVT_STACK_BUSY_STATUS:
             LOG_D("CY_BLE_EVT_STACK_BUSY_STATUS: %x", *(uint8_t *)eventParam);
             break;
+            
         case CY_BLE_EVT_SET_TX_PWR_COMPLETE:
             LOG_D("CY_BLE_EVT_SET_TX_PWR_COMPLETE");
             break;
@@ -114,34 +115,6 @@ void static StackEventHandler(uint32_t event, void *eventParam)
         case CY_BLE_EVT_STACK_SHUTDOWN_COMPLETE:
             LOG_D("CY_BLE_EVT_STACK_SHUTDOWN_COMPLETE");
             break; 
-        /**********************************************************
-        *                       GATT Events
-        ***********************************************************/
-        case CY_BLE_EVT_GATT_CONNECT_IND:
-            appConnHandle = *(cy_stc_ble_conn_handle_t *)eventParam;
-            LOG_I("CY_BLE_EVT_GATT_CONNECT_IND: %x, %x", appConnHandle.attId, appConnHandle.bdHandle);
-            break;
-
-        case CY_BLE_EVT_GATT_DISCONNECT_IND:
-            LOG_E("CY_BLE_EVT_GATT_DISCONNECT_IND:");
-            appConnHandle.attId = 0u;
-            appConnHandle.bdHandle = 0u;
-            break;
-        
-        case CY_BLE_EVT_GATTS_XCNHG_MTU_REQ:
-        {
-            cy_stc_ble_gatt_xchg_mtu_param_t mtu;
-
-            Cy_BLE_GATT_GetMtuSize(&mtu);
-            LOG_D("CY_BLE_EVT_GATTS_XCNHG_MTU_REQ, final mtu= %d", mtu.mtu);
-            LOG_D("CY_BLE_EVT_GATTS_XCNHG_MTU_REQ: GATT Client RX MTU = %d", ((cy_stc_ble_gatt_xchg_mtu_param_t *)eventParam)->mtu);
-        }
-        break;
-
-        case CY_BLE_EVT_GATTS_READ_CHAR_VAL_ACCESS_REQ:
-            LOG_D("CY_BLE_EVT_GATTS_READ_CHAR_VAL_ACCESS_REQ, attHandle: %d", ((cy_stc_ble_gatts_char_val_read_req_t *)eventParam)->attrHandle);
-            break;
-            
         /**********************************************************
         *                       GAP Events
         ***********************************************************/
@@ -227,6 +200,11 @@ void static StackEventHandler(uint32_t event, void *eventParam)
             authInfo = (cy_stc_ble_gap_auth_info_t *)eventParam;
             LOG_I("CY_BLE_EVT_GAP_AUTH_COMPLETE: security: 0x%x, bonding: 0x%x, ekeySize: 0x%x, authErr 0x%x \r\n",
                                     authInfo->security, authInfo->bonding, authInfo->ekeySize, authInfo->authErr);
+
+            LOG_W("StartDiscovery");
+            apiResult = Cy_BLE_GATTC_StartDiscovery(appConnHandle);
+            if(apiResult != CY_BLE_SUCCESS)
+                LOG_E("StartDiscovery API Error: 0x%x", apiResult);
             break;
             
         case CY_BLE_EVT_GAP_AUTH_FAILED:
@@ -253,6 +231,68 @@ void static StackEventHandler(uint32_t event, void *eventParam)
             LOG_D("CY_BLE_EVT_GAP_KEYINFO_EXCHNGE_CMPLT");
             break;
 
+        /**********************************************************
+        *                       GATT Events
+        ***********************************************************/
+        case CY_BLE_EVT_GATT_CONNECT_IND:
+            appConnHandle = *(cy_stc_ble_conn_handle_t *)eventParam;
+            LOG_I("CY_BLE_EVT_GATT_CONNECT_IND: %x, %x", appConnHandle.attId, appConnHandle.bdHandle);
+            break;
+
+        case CY_BLE_EVT_GATT_DISCONNECT_IND:
+            LOG_E("CY_BLE_EVT_GATT_DISCONNECT_IND:");
+            appConnHandle.attId = 0u;
+            appConnHandle.bdHandle = 0u;
+            break;
+        
+        case CY_BLE_EVT_GATTS_XCNHG_MTU_REQ:
+        {
+            cy_stc_ble_gatt_xchg_mtu_param_t mtu;
+
+            Cy_BLE_GATT_GetMtuSize(&mtu);
+            LOG_D("CY_BLE_EVT_GATTS_XCNHG_MTU_REQ, final mtu= %d", mtu.mtu);
+            LOG_D("CY_BLE_EVT_GATTS_XCNHG_MTU_REQ: GATT Client RX MTU = %d", ((cy_stc_ble_gatt_xchg_mtu_param_t *)eventParam)->mtu);
+        }
+        break;
+
+        case CY_BLE_EVT_GATTS_READ_CHAR_VAL_ACCESS_REQ:
+            LOG_D("CY_BLE_EVT_GATTS_READ_CHAR_VAL_ACCESS_REQ, attHandle: %d", ((cy_stc_ble_gatts_char_val_read_req_t *)eventParam)->attrHandle);
+            break;
+            
+        case CY_BLE_EVT_GATTS_INDICATION_ENABLED:
+            LOG_D("CY_BLE_EVT_GATTS_INDICATION_ENABLED");
+            break;
+            
+        case CY_BLE_EVT_GATTS_INDICATION_DISABLED:
+            LOG_D("CY_BLE_EVT_GATTS_INDICATION_DISABLED");
+            break;
+            
+        case CY_BLE_EVT_GATTC_DISC_SKIPPED_SERVICE:
+            LOG_D("CY_BLE_EVT_GATTC_DISC_SKIPPED_SERVICE");
+            break;
+            
+        case CY_BLE_EVT_GATTC_DISCOVERY_COMPLETE:
+            LOG_D("CY_BLE_EVT_GATTC_DISCOVERY_COMPLETE");
+            LOG_D("The discovered services:");
+            for(i = 0u; i < CY_BLE_SRVI_COUNT; i++)
+            {
+                rt_kprintf("Service with UUID 0x%x has handle range from 0x%x to 0x%x\r\n",
+                       cy_ble_serverInfo[discIdx][i].uuid,
+                       cy_ble_serverInfo[discIdx][i].range.startHandle,
+                       cy_ble_serverInfo[discIdx][i].range.endHandle);
+                
+                if(cy_ble_serverInfo[discIdx][i].uuid == 0x0000u)
+                {
+                    if(cy_ble_serverInfo[discIdx][i].range.startHandle < cy_ble_serverInfo[discIdx][i].range.endHandle)
+                    {
+                        LOG_I("The peer device supports ANS");
+//                        ancsFlag |= CY_BLE_ANCS_FLG_START;
+                    }
+                    else
+                        LOG_W("The peer device doesn't support ANS");
+                }
+            }
+        break;
     /**********************************************************
     *                       Other Events
     ***********************************************************/
