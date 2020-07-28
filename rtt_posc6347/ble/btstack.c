@@ -337,6 +337,21 @@ static void ble_adv(uint8_t argc, char **argv)
 }
 MSH_CMD_EXPORT(ble_adv, ble_advertisement[enable|disable]);
 //***************************************************************************************************************************
+//by yangwensen@20200728
+static void ble_disconnect(void)
+{
+    cy_en_ble_api_result_t res;
+    cy_stc_ble_gap_disconnect_info_t info;
+    
+    info.bdHandle = appConnHandle.bdHandle;
+    info.reason = CY_BLE_HCI_ERROR_OTHER_END_TERMINATED_USER;
+    
+    res = Cy_BLE_GAP_Disconnect(&info);
+    if(res!=CY_BLE_SUCCESS)
+        LOG_E("Cy_BLE_GAP_Disconnect() Error: 0x%x", res);
+}
+MSH_CMD_EXPORT(ble_disconnect, terminate the LE connection with with peer device);
+//***************************************************************************************************************************
 //by yangwensen@20200723
 static rt_bool_t _stack_init(void)
 {
