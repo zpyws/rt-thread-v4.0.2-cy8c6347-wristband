@@ -118,6 +118,13 @@ void static StackEventHandler(uint32_t event, void *eventParam)
         }
         break;
 
+        case CY_BLE_EVT_GET_RSSI_COMPLETE:
+            if( ((cy_stc_ble_events_param_generic_t*)eventParam)->status == 0 ) 
+                LOG_D("CY_BLE_EVT_GET_RSSI_COMPLETE: %d", ((cy_stc_ble_rssi_info_t*)((cy_stc_ble_events_param_generic_t*)eventParam)->eventParams)->rssi );
+            else
+                LOG_E("get rssi error");
+            break;
+        
         case CY_BLE_EVT_STACK_SHUTDOWN_COMPLETE:
             LOG_D("CY_BLE_EVT_STACK_SHUTDOWN_COMPLETE");
             break; 
@@ -398,6 +405,17 @@ static void ble_disconnect(void)
         LOG_E("Cy_BLE_GAP_Disconnect() Error: 0x%x", res);
 }
 MSH_CMD_EXPORT(ble_disconnect, terminate the LE connection with with peer device);
+//***************************************************************************************************************************
+//by yangwensen@20200728
+static void ble_rssi(void)
+{
+    cy_en_ble_api_result_t res;
+    
+    res = Cy_BLE_GetRssiPeer(appConnHandle.bdHandle);
+    if(res!=CY_BLE_SUCCESS)
+        LOG_E("Cy_BLE_GetRssiPeer() Error: 0x%x", res);
+}
+MSH_CMD_EXPORT(ble_rssi, reads Received Signal Strength Indicator (RSSI) );
 //***************************************************************************************************************************
 //by yangwensen@20200723
 static rt_bool_t _stack_init(void)
