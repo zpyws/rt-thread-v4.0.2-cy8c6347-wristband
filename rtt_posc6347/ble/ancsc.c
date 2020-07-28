@@ -28,6 +28,7 @@
 //外部变量
 extern cy_stc_ble_conn_handle_t  appConnHandle;
 
+extern void ble_ansc_prcess_request(void);
     
 /* Global variables */
 uint8_t ancsFlag = 0u; /* ANCS specific flags */
@@ -53,19 +54,19 @@ void AncsPrintCharName(cy_en_ble_ancs_char_index_t charIndex)
     switch(charIndex)
     {
         case CY_BLE_ANCS_NS:                    
-            rt_kprintf("Notification Source");
+            LOG_RAW("Notification Source");
             break;
         
         case CY_BLE_ANCS_CP:                    
-            rt_kprintf("Control Point");
+            LOG_RAW("Control Point");
             break;
             
         case CY_BLE_ANCS_DS:
-            rt_kprintf("Data Source");
+            LOG_RAW("Data Source");
             break;
             
         default:
-            rt_kprintf("Unknown ANCS");
+            LOG_RAW("Unknown ANCS");
             break;
     }
     
@@ -83,7 +84,7 @@ void AncsPrintCharName(cy_en_ble_ancs_char_index_t charIndex)
 *******************************************************************************/
 void AncsNextAct(void)
 {
-    rt_kprintf("\r\n\n");
+    LOG_RAW("\r\n\n");
     
     switch(cp.attId)
     {
@@ -171,13 +172,11 @@ void AncsCallBack(uint32_t event, void* eventParam)
     switch(event)
     {
         case CY_BLE_EVT_ANCSC_NOTIFICATION:  
-        #if(DEBUG_UART_FULL == ENABLED)
-            LOG_D("CY_BLE_EVT_ANCSC_NOTIFICATION");
+//            LOG_D("CY_BLE_EVT_ANCSC_NOTIFICATION");
 //            ShowValue(((cy_stc_ble_ancs_char_value_t *)eventParam)->value);
-        #endif /* if(DEBUG_UART_FULL == ENABLED) */
             switch(((cy_stc_ble_ancs_char_value_t *)eventParam)->charIndex)
             {
-                case CY_BLE_ANCS_NS:
+                case CY_BLE_ANCS_NS:    //Notification Source characteristic index
                     {
                         uint8_t locFlag = 0u;
                         
@@ -213,65 +212,65 @@ void AncsCallBack(uint32_t event, void* eventParam)
                             ns[nsCnt].ntfUid = locNtfUid;
                             
                             /* Print all details of Notification */
-                            LOG_D("\r\nEventID: ");
+                            LOG_RAW("\r\nEventID: ");
                             switch(ns[nsCnt].evtId)
                             {
                                 case CY_BLE_ANCS_NS_EVT_ID_ADD:
-                                    LOG_D("Notification Added\r\n");
+                                    LOG_RAW("Notification Added\r\n");
                                     break;
                                 
                                 case CY_BLE_ANCS_NS_EVT_ID_MOD:
-                                    LOG_D("Notification Modified\r\n");
+                                    LOG_RAW("Notification Modified\r\n");
                                     break;
                                 
                                 case CY_BLE_ANCS_NS_EVT_ID_REM:
-                                    LOG_D("Notification Removed\r\n");
+                                    LOG_RAW("Notification Removed\r\n");
                                     break;
                                 
                                 default:
-                                    LOG_W("Unsupported\r\n");
+                                    LOG_RAW("Unsupported\r\n");
                                     break;
                             }
                             
-                            LOG_D("EventFlags: ");
+                            LOG_RAW("EventFlags: ");
                             if((ns[nsCnt].evtFlg & CY_BLE_ANCS_NS_FLG_SL) != 0u)
                             {
-                                LOG_D("Silent, ");
+                                LOG_RAW("Silent, ");
                             }
                             
                             if((ns[nsCnt].evtFlg & CY_BLE_ANCS_NS_FLG_IM) != 0u)
                             {
-                                LOG_D("Important, ");
+                                LOG_RAW("Important, ");
                             }
                             
                             if((ns[nsCnt].evtFlg & CY_BLE_ANCS_NS_FLG_PE) != 0u)
                             {
-                                LOG_D("Pre-existing, ");
+                                LOG_RAW("Pre-existing, ");
                             }
                             
                             if((ns[nsCnt].evtFlg & CY_BLE_ANCS_NS_FLG_PA) != 0u)
                             {
-                                LOG_D("Positive Action, ");
+                                LOG_RAW("Positive Action, ");
                             }
                             
                             if((ns[nsCnt].evtFlg & CY_BLE_ANCS_NS_FLG_NA) != 0u)
                             {
-                                LOG_D("Negative Action, ");
+                                LOG_RAW("Negative Action, ");
                             }
-                            LOG_D("\r\n");
+                            LOG_RAW("\r\n");
                             
-                            LOG_D("CategoryCount: %d\r\n", ns[nsCnt].ctgCnt);
-                            LOG_D("NotificationUID: 0x%8.8lx\r\n", ns[nsCnt].ntfUid);
+                            LOG_RAW("CategoryCount: %d\r\n", ns[nsCnt].ctgCnt);
+                            LOG_RAW("NotificationUID: 0x%8.8lx\r\n", ns[nsCnt].ntfUid);
                             
-                            LOG_D("CategoryID: ");
+                            LOG_RAW("CategoryID: ");
                             switch(ns[nsCnt].ctgId)
                             {
                                 case CY_BLE_ANCS_NS_CAT_ID_OTH: /* If Category ID is "Other" */
-                                    LOG_D("Other\r\n");
+                                    LOG_RAW("Other\r\n");
                                     break;
                                     
                                 case CY_BLE_ANCS_NS_CAT_ID_INC: /* If Category ID is "Incoming Call" */
-                                    LOG_D("Incoming Call\r\n");
+                                    LOG_RAW("Incoming Call\r\n");
                                     if(ns[nsCnt].evtId == CY_BLE_ANCS_NS_EVT_ID_ADD) /* If Event ID is "Notification Added" */
                                     { 
                                         if(nsCnt < (CY_BLE_ANCS_NS_CNT - 1)) /* If notification queue is not full */
@@ -282,15 +281,15 @@ void AncsCallBack(uint32_t event, void* eventParam)
                                     break;
                                 
                                 case CY_BLE_ANCS_NS_CAT_ID_MIS: /* If Category ID is "Missed Call" */
-                                    LOG_D("Missed Call\r\n");
+                                    LOG_RAW("Missed Call\r\n");
                                     break;
                                 
                                 case CY_BLE_ANCS_NS_CAT_ID_VML: /* If Category ID is "Voice mail" */
-                                    LOG_D("Voicemail\r\n");
+                                    LOG_RAW("Voicemail\r\n");
                                     break;
                                 
                                 case CY_BLE_ANCS_NS_CAT_ID_SOC: /* If Category ID is "Social" */
-                                    LOG_D("Social\r\n");
+                                    LOG_RAW("Social\r\n");
                                     if(ns[nsCnt].evtId == CY_BLE_ANCS_NS_EVT_ID_ADD) /* If Event ID is "Notification Added" */
                                     {
                                         if(nsCnt < (CY_BLE_ANCS_NS_CNT - 1)) /* If notification queue is not full */
@@ -301,11 +300,11 @@ void AncsCallBack(uint32_t event, void* eventParam)
                                     break;
                                 
                                 case CY_BLE_ANCS_NS_CAT_ID_SCH: /* If the Category ID is "Schedule" */
-                                    LOG_D("Schedule\r\n");
+                                    LOG_RAW("Schedule\r\n");
                                     break;
                                 
                                 case CY_BLE_ANCS_NS_CAT_ID_EML: /* If Category ID is "Email" */
-                                    LOG_D("Email\r\n");
+                                    LOG_RAW("Email\r\n");
                                     if(ns[nsCnt].evtId == CY_BLE_ANCS_NS_EVT_ID_ADD) /* If Event ID is "Notification Added" */
                                     {
                                         if(nsCnt < (CY_BLE_ANCS_NS_CNT - 1)) /* If notification queue is not full */
@@ -316,27 +315,27 @@ void AncsCallBack(uint32_t event, void* eventParam)
                                     break;
                                 
                                 case CY_BLE_ANCS_NS_CAT_ID_NWS: /* If Category ID is "News" */
-                                    LOG_D("News\r\n");
+                                    LOG_RAW("News\r\n");
                                     break;
                                 
                                 case CY_BLE_ANCS_NS_CAT_ID_HNF: /* If Category ID is "Health and Fitness" */
-                                    LOG_D("Health and Fitness\r\n");
+                                    LOG_RAW("Health and Fitness\r\n");
                                     break;
                                 
                                 case CY_BLE_ANCS_NS_CAT_ID_BNF: /* If Category ID is "Business and Finance" */
-                                    LOG_D("Business and Finance\r\n");
+                                    LOG_RAW("Business and Finance\r\n");
                                     break;
                                 
                                 case CY_BLE_ANCS_NS_CAT_ID_LOC: /* If Category ID is "Location" */
-                                    LOG_D("Location\r\n");
+                                    LOG_RAW("Location\r\n");
                                     break;
                                 
                                 case CY_BLE_ANCS_NS_CAT_ID_ENT: /* If Category ID is "Entertainment" */
-                                    LOG_D("Entertainment\r\n");
+                                    LOG_RAW("Entertainment\r\n");
                                     break;
                                 
                                 default:
-                                    LOG_W("Unsupported\r\n");
+                                    LOG_RAW("Unsupported\r\n");
                                     break;
                             }
                         }
@@ -352,11 +351,7 @@ void AncsCallBack(uint32_t event, void* eventParam)
                         if((ancsFlag & CY_BLE_ANCS_FLG_STR) != 0u) /* If there is unfinished string */
                         {
                             LOG_D("CY_BLE_ANCS_FLG_STR");
-                            for(i = 0u; i < locLength; i++)
-                            {
-//                                LOG_D(locData[i]); /* Print data */
-                            }
-                            
+                            LOG_RAW("%.*s", locLength, locData); /* Print data */
                             ds.currLength += (uint16_t)locLength; /* Update current length */
                             
                             if(ds.currLength == ds.length) /* If data is complete */
@@ -390,29 +385,29 @@ void AncsCallBack(uint32_t event, void* eventParam)
                                         switch(cp.ctgId)
                                         {
                                             case CY_BLE_ANCS_NS_CAT_ID_EML: /* If Category ID is "Email" */
-                                                LOG_D("\r\nEmail from: \n");
+                                                LOG_RAW("\r\nEmail from: \n");
                                                 break;
                                                 
                                             case CY_BLE_ANCS_NS_CAT_ID_INC: /* If Category ID is "Incoming Call" */
-                                                LOG_D("\r\nIncoming Call from:  \n");
+                                                LOG_RAW("\r\nIncoming Call from:  \n");
                                                 break;
                                                 
                                             case CY_BLE_ANCS_NS_CAT_ID_SOC: /* If Category ID is "Social" */
-                                                LOG_D("\r\nApp: \n");
+                                                LOG_RAW("\r\nApp: \n");
                                                 break;
                                                 
                                             default:
-                                                LOG_D("\r\nTitle: \n");
+                                                LOG_RAW("\r\nTitle: \n");
                                                 break;
                                         }
                                         break;
                                         
                                     case CY_BLE_ANCS_CP_ATT_ID_SBT: /* If Attribute ID is "Subtitle" */
-                                        LOG_D("Subject: \n");
+                                        LOG_RAW("Subject: \n");
                                         break;
                                         
                                     case CY_BLE_ANCS_CP_ATT_ID_MSG: /* If Attribute ID is "Message" */
-                                        LOG_D("Message: \n");
+                                        LOG_RAW("Message: \n");
                                         break;
                                         
                                     default:
@@ -425,10 +420,7 @@ void AncsCallBack(uint32_t event, void* eventParam)
                                     case CY_BLE_ANCS_CP_ATT_ID_SBT: /* If Attribute ID is "Subtitle" */
                                     case CY_BLE_ANCS_CP_ATT_ID_MSG: /* If Attribute ID is "Message" */
                                         LOG_W("CY_BLE_ANCS_CP_ATT_ID");
-                                        for(i = 0u; i < locLength; i++)
-                                        {
-//                                            UART_DEB_PUT_CHAR(ds.data[i]); /* Print data */
-                                        }
+                                        LOG_RAW("%.*s", locLength, ds.data);
                                         
                                         if(ds.length > locLength)
                                         { /* Indicate that data is not full, 
@@ -461,6 +453,7 @@ void AncsCallBack(uint32_t event, void* eventParam)
             break;
                 
         case CY_BLE_EVT_ANCSC_WRITE_DESCR_RESPONSE:
+            LOG_D("CY_BLE_EVT_ANCSC_WRITE_DESCR_RESPONSE");
             if(((cy_stc_ble_ancs_char_value_t *)eventParam)->charIndex == CY_BLE_ANCS_NS) /* If NS notification is enabled */
             {
                 uint16_t cccd;
@@ -475,13 +468,13 @@ void AncsCallBack(uint32_t event, void* eventParam)
                 else
                 {
                     AncsPrintCharName(CY_BLE_ANCS_DS);
-                    rt_kprintf("CCCD write request: 0x%2.2x\r\n", cccd);
+                    LOG_RAW("CCCD write request: 0x%2.2x\r\n", cccd);
                 }
             }
             break;
             
         case CY_BLE_EVT_ANCSC_ERROR_RESPONSE:
-            LOG_E("CY_BLE_EVT_ANCSC_ERROR_RESPONSE");
+            LOG_E("CY_BLE_EVT_ANCSC_ERROR_RESPONSE: 0x%x", ((cy_stc_ble_ancs_char_value_t *)event)->gattErrorCode);
             ancsFlag &= (uint8_t)~CY_BLE_ANCS_FLG_RSP;
             break;
         
@@ -489,6 +482,8 @@ void AncsCallBack(uint32_t event, void* eventParam)
             LOG_W("Unknown ANCS event: 0x%lx\r\n", event);
             break;
     }
+    if(ancsFlag)
+        ble_ansc_prcess_request();
 }
 
 
@@ -588,7 +583,7 @@ void AncsProcess(void)
         else
         {
             AncsPrintCharName(CY_BLE_ANCS_NS);
-            rt_kprintf("CCCD write request: 0x%2.2x\r\n", cccd);
+            LOG_RAW("CCCD write request: 0x%2.2x\r\n", cccd);
         }
         ancsFlag &= (uint8_t)~CY_BLE_ANCS_FLG_START;
     }
@@ -633,6 +628,9 @@ void AncsProcess(void)
             ancsFlag |= CY_BLE_ANCS_FLG_RSP;
         }
     }
+    
+    if(ancsFlag)
+        ble_ansc_prcess_request();
 }
 
 

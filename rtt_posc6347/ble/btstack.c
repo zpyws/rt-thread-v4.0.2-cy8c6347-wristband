@@ -31,6 +31,12 @@ void static BleControllerInterruptEventHandler(void)
     rt_event_send(stack_event, STACK_EV_DISPATCH);
 }
 //***************************************************************************************************************************
+//by yangwensen@20200728
+void ble_ansc_prcess_request(void)
+{
+    rt_event_send(stack_event, STACK_EV_ANS);
+}
+//***************************************************************************************************************************
 //by yangwensen@20200723
 void static StackEventHandler(uint32_t event, void *eventParam)
 {
@@ -143,7 +149,7 @@ void static StackEventHandler(uint32_t event, void *eventParam)
                 if(apiResult != CY_BLE_SUCCESS)
                     LOG_E("Cy_BLE_GAP_SetSecurityKeys API Error: 0x%x \r\n", apiResult);
             }
-            
+            ancsFlag = 0;
             break;
         
         case CY_BLE_EVT_GAP_DEVICE_DISCONNECTED:
@@ -287,7 +293,7 @@ void static StackEventHandler(uint32_t event, void *eventParam)
                     {
                         LOG_I("The peer device supports ANS");
                         ancsFlag |= CY_BLE_ANCS_FLG_START;
-                        rt_event_send(stack_event, STACK_EV_ANS);
+                        ble_ansc_prcess_request();
                     }
                     else
                         LOG_W("The peer device doesn't support ANS");
