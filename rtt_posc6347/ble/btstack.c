@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include "ancsc.h"
 //***************************************************************************************************************************
+#define CY_BLE_CONN_INTRV_TO_MS      (5 / 4)
+//***************************************************************************************************************************
 typedef enum
 {
     STACK_EV_DISPATCH = 1,
@@ -21,7 +23,8 @@ rt_event_t stack_event;
 cy_stc_ble_conn_handle_t appConnHandle;
 //***************************************************************************************************************************
 //外部函数
-void App_DisplayBondList(void);
+extern void App_DisplayBondList(void);
+extern bool App_IsDeviceInBondList(uint32_t bdHandle);
 //***************************************************************************************************************************
 void static BleControllerInterruptEventHandler(void)
 {
@@ -152,10 +155,23 @@ void static StackEventHandler(uint32_t event, void *eventParam)
         /* This event is generated at the GAP Peripheral end after connection 
            is completed with peer Central device */
         case CY_BLE_EVT_GAP_DEVICE_CONNECTED:
-        {        
-            LOG_I("GAP device connected"); 
+            LOG_D("CY_BLE_EVT_GAP_DEVICE_CONNECTED: %x, %x(%.2f ms), %x, %x",   
+                ((cy_stc_ble_gap_connected_param_t *)eventParam)->status,
+                ((cy_stc_ble_gap_connected_param_t *)eventParam)->connIntv,
+                (float)((cy_stc_ble_gap_connected_param_t *)eventParam)->connIntv * CY_BLE_CONN_INTRV_TO_MS,
+                ((cy_stc_ble_gap_connected_param_t *)eventParam)->connLatency,
+                ((cy_stc_ble_gap_connected_param_t *)eventParam)->supervisionTO);
+
+            /* Set security keys for new device which is not already bonded */
+            if(App_IsDeviceInBondList((*(cy_stc_ble_gap_connected_param_t *)eventParam).bdHandle) == 0u)
+            {
+                keyInfo.SecKeyParam.bdHandle = (*(cy_stc_ble_gap_connected_param_t *)eventParam).bdHandle;
+                apiResult = Cy_BLE_GAP_SetSecurityKeys(&keyInfo);
+                if(apiResult != CY_BLE_SUCCESS)
+                    LOG_E("Cy_BLE_GAP_SetSecurityKeys API Error: 0x%x \r\n", apiResult);
+            }
+            
             break;
-        }
         
         case CY_BLE_EVT_GAP_DEVICE_DISCONNECTED:
             LOG_E("CY_BLE_EVT_GAP_DEVICE_DISCONNECTED");
@@ -225,8 +241,18 @@ void static StackEventHandler(uint32_t event, void *eventParam)
         case CY_BLE_EVT_GAP_KEYS_GEN_COMPLETE:
             LOG_D("CY_BLE_EVT_GAP_KEYS_GEN_COMPLETE");
             keyInfo.SecKeyParam = (*(cy_stc_ble_gap_sec_key_param_t *)eventParam);
+
+            apiResult = Cy_BLE_GAP_SetIdAddress(&cy_ble_deviceAddress);
+            if(apiResult != CY_BLE_SUCCESS)
+            {
+                LOG_E("Cy_BLE_GAP_SetIdAddress API Error: 0x%x", apiResult);
+            }
             break;
-            
+
+        case CY_BLE_EVT_GAP_KEYINFO_EXCHNGE_CMPLT:
+            LOG_D("CY_BLE_EVT_GAP_KEYINFO_EXCHNGE_CMPLT");
+            break;
+
     /**********************************************************
     *                       Other Events
     ***********************************************************/
@@ -236,7 +262,7 @@ void static StackEventHandler(uint32_t event, void *eventParam)
             break;
             
         default:
-            LOG_D("Other event: 0x%lx", event);
+            LOG_D("Other event: 0x%x", event);
     }
 } 
 //***************************************************************************************************************************

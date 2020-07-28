@@ -163,7 +163,6 @@ uint32_t App_GetCountOfBondedDevices(void)
 *   bool - true value when bdHandle exists in bond list
 *
 *******************************************************************************/
-#if 0
 bool App_IsDeviceInBondList(uint32_t bdHandle)
 {
     cy_en_ble_api_result_t apiResult;
@@ -179,7 +178,7 @@ bool App_IsDeviceInBondList(uint32_t bdHandle)
     apiResult = Cy_BLE_GAP_GetBondList(&bondedDeviceList);
     if(apiResult != CY_BLE_SUCCESS)
     {
-        DBG_PRINTF("Cy_BLE_GAP_GetBondedDevicesList API Error: 0x%x \r\n", apiResult);
+        LOG_E("Cy_BLE_GAP_GetBondedDevicesList API Error: 0x%x", apiResult);
     }
     else
     {
@@ -199,7 +198,6 @@ bool App_IsDeviceInBondList(uint32_t bdHandle)
     }
     return(deviceIsDetected);
 }
-#endif
 
 /*******************************************************************************
 * Function Name: App_RemoveDevicesFromBondListBySW2Press()
