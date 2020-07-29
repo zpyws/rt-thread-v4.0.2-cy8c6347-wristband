@@ -27,6 +27,8 @@ extern void App_DisplayBondList(void);
 extern bool App_IsDeviceInBondList(uint32_t bdHandle);
 //from custom_servie.c
 extern int8_t gatt_write_request(cy_stc_ble_gatt_write_param_t *p);
+//from unionpay.c
+extern int cble_init(void);
 //***************************************************************************************************************************
 void static BleControllerInterruptEventHandler(void)
 {
@@ -442,6 +444,8 @@ static rt_bool_t _stack_init(void)
         LOG_E("sem create failure");
         return RT_FALSE;
     }
+
+	cble_init();
 
     ble_stack_init();
 

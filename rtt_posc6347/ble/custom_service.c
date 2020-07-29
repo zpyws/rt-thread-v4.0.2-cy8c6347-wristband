@@ -6,6 +6,10 @@
 #define LOG_LVL                         LOG_LVL_DBG
 #include <ulog.h>
 //***************************************************************************************************************************
+//function prototype
+//from unionpay.c
+extern int8_t cble_data_in(uint8_t *data, uint8_t size);
+//***************************************************************************************************************************
 //by yangwensen@20200729
 int8_t gatt_write_request(cy_stc_ble_gatt_write_param_t *p)
 {
@@ -22,7 +26,8 @@ int8_t gatt_write_request(cy_stc_ble_gatt_write_param_t *p)
 	
 	if(p->handleValPair.attrHandle == CY_BLE_UNIONPAY_IN_CHAR_HANDLE)
 	{
-		LOG_D("Data in");
+//		LOG_D("Data in %d bytes", p->handleValPair.value.len);
+		cble_data_in(p->handleValPair.value.val, p->handleValPair.value.len);
 	}
 	else if(p->handleValPair.attrHandle == CY_BLE_UNIONPAY_OUT_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE)
 	{
