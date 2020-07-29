@@ -25,6 +25,8 @@ cy_stc_ble_conn_handle_t appConnHandle;
 //外部函数
 extern void App_DisplayBondList(void);
 extern bool App_IsDeviceInBondList(uint32_t bdHandle);
+//from custom_servie.c
+extern int8_t gatt_write_request(cy_stc_ble_gatt_write_param_t *p);
 //***************************************************************************************************************************
 void static BleControllerInterruptEventHandler(void)
 {
@@ -310,7 +312,17 @@ void static StackEventHandler(uint32_t event, void *eventParam)
 
         case CY_BLE_EVT_GATTS_WRITE_REQ:
             LOG_D("CY_BLE_EVT_GATTS_WRITE_REQ");
+			gatt_write_request((cy_stc_ble_gatt_write_param_t *)eventParam);
             break;
+
+        case CY_BLE_EVT_GATTS_WRITE_CMD_REQ:
+            LOG_D("CY_BLE_EVT_GATTS_WRITE_CMD_REQ");
+			break;
+
+        case CY_BLE_EVT_GATTS_HANDLE_VALUE_CNF:
+            LOG_D("CY_BLE_EVT_GATTS_HANDLE_VALUE_CNF");
+            break;
+
     /**********************************************************
     *                       Other Events
     ***********************************************************/
