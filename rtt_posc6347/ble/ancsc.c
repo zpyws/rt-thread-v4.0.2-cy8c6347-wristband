@@ -28,7 +28,7 @@
 //外部变量
 extern cy_stc_ble_conn_handle_t  appConnHandle;
 
-extern void ble_ansc_prcess_request(void);
+extern void ble_ansc_process_request(void);
     
 /* Global variables */
 uint8_t ancsFlag = 0u; /* ANCS specific flags */
@@ -483,7 +483,7 @@ void AncsCallBack(uint32_t event, void* eventParam)
             break;
     }
     if(ancsFlag)
-        ble_ansc_prcess_request();
+        ble_ansc_process_request();
 }
 
 
@@ -630,7 +630,7 @@ void AncsProcess(void)
     }
     
     if(ancsFlag)
-        ble_ansc_prcess_request();
+        ble_ansc_process_request();
 }
 
 

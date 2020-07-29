@@ -32,7 +32,7 @@ void static BleControllerInterruptEventHandler(void)
 }
 //***************************************************************************************************************************
 //by yangwensen@20200728
-void ble_ansc_prcess_request(void)
+void ble_ansc_process_request(void)
 {
     rt_event_send(stack_event, STACK_EV_ANS);
 }
@@ -300,13 +300,17 @@ void static StackEventHandler(uint32_t event, void *eventParam)
                     {
                         LOG_I("The peer device supports ANS");
                         ancsFlag |= CY_BLE_ANCS_FLG_START;
-                        ble_ansc_prcess_request();
+                        ble_ansc_process_request();
                     }
                     else
                         LOG_W("The peer device doesn't support ANS");
                 }
             }
         break;
+
+        case CY_BLE_EVT_GATTS_WRITE_REQ:
+            LOG_D("CY_BLE_EVT_GATTS_WRITE_REQ");
+            break;
     /**********************************************************
     *                       Other Events
     ***********************************************************/
