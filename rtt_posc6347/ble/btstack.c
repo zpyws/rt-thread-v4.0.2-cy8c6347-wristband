@@ -2,7 +2,7 @@
 #include <rtthread.h>
 #include <project.h>
 
-#define LOG_TAG                         "BLE"
+#define LOG_TAG                         "CYBLE"
 #define LOG_LVL                         LOG_LVL_DBG
 #include <ulog.h>
 

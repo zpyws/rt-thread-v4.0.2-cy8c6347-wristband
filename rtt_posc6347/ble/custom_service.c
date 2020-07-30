@@ -61,3 +61,83 @@ int8_t gatt_write_request(cy_stc_ble_gatt_write_param_t *p)
 	return 0;
 }
 //***************************************************************************************************************************
+//by yangwensen@20200730
+int8_t ble_send_notification(cy_stc_ble_conn_handle_t connHandle, cy_ble_gatt_db_attr_handle_t cccdHandle, cy_ble_gatt_db_attr_handle_t attrHandle, uint8_t *buff, uint32_t len)
+{
+    cy_en_ble_api_result_t apiResult = CY_BLE_SUCCESS;
+    
+    if(Cy_BLE_GetConnectionState(connHandle) < CY_BLE_CONN_STATE_CONNECTED)
+    {
+		LOG_E("ble disconnected!");
+        return -1;
+    }
+	
+    if(CY_BLE_IS_NOTIFICATION_ENABLED(connHandle.attId, cccdHandle))
+	{
+		LOG_E("notification not enabled");
+		return -2;
+	}
+	
+	while(Cy_BLE_GATT_GetBusyStatus(connHandle.attId) == CY_BLE_STACK_STATE_BUSY)
+	{
+	    Cy_BLE_ProcessEvents();
+	}
+
+    cy_stc_ble_gatts_handle_value_ntf_t notify_handle =
+    {
+        .connHandle = connHandle,
+        .handleValPair.attrHandle = attrHandle,
+        .handleValPair.value.len = len,
+        .handleValPair.value.val = buff,
+    };
+
+	apiResult = Cy_BLE_GATTS_Notification(&notify_handle);
+    if(apiResult != CY_BLE_SUCCESS)
+    {
+        LOG_E("Cy_BLE_GATTS_Notification API Error: 0x%x", apiResult);
+		return -3;
+    }
+
+	return 0;
+}
+//***************************************************************************************************************************
+//by yangwensen@20200730
+int8_t ble_send_indication(cy_stc_ble_conn_handle_t connHandle, cy_ble_gatt_db_attr_handle_t cccdHandle, cy_ble_gatt_db_attr_handle_t attrHandle, uint8_t *buff, uint32_t len)
+{
+    cy_en_ble_api_result_t apiResult = CY_BLE_SUCCESS;
+    
+    if(Cy_BLE_GetConnectionState(connHandle) < CY_BLE_CONN_STATE_CONNECTED)
+    {
+		LOG_E("ble disconnected!");
+        return -1;
+    }
+	
+    if(CY_BLE_IS_INDICATION_ENABLED(connHandle.attId, cccdHandle))
+	{
+		LOG_E("notification not enabled");
+		return -2;
+	}
+	
+	while(Cy_BLE_GATT_GetBusyStatus(connHandle.attId) == CY_BLE_STACK_STATE_BUSY)
+	{
+	    Cy_BLE_ProcessEvents();
+	}
+
+    cy_stc_ble_gatts_handle_value_ind_t indicate_handle =
+    {
+        .connHandle = connHandle,
+        .handleValPair.attrHandle = attrHandle,
+        .handleValPair.value.len = len,
+        .handleValPair.value.val = buff,
+    };
+
+	apiResult = Cy_BLE_GATTS_Indication(&indicate_handle);
+    if(apiResult != CY_BLE_SUCCESS)
+    {
+        LOG_E("Cy_BLE_GATTS_Notification API Error: 0x%x", apiResult);
+		return -3;
+    }
+
+	return 0;
+}
+//***************************************************************************************************************************
