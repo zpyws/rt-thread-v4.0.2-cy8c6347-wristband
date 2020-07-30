@@ -1,10 +1,54 @@
 //created by yangwensen@20200729
 #include <rtthread.h>
 #include <project.h>
+#include <rtdevice.h>
+#include "ble_dev.h"
 
 #define LOG_TAG                         "GATT"
 #define LOG_LVL                         LOG_LVL_DBG
 #include <ulog.h>
+//***************************************************************************************************************************
+enum
+{
+	BLE_UNIONPAY_TX_INDEX,
+	BLE_UNIONPAY_RX_INDEX,
+};
+
+typedef struct
+{
+	cy_stc_ble_conn_handle_t connHandle;
+	cy_ble_gatt_db_attr_handle_t cccdHandle;
+	cy_ble_gatt_db_attr_handle_t attrHandle;
+}ble_service_access_node_t;
+
+struct ble_custom_service_config
+{
+    const char *name;
+	const uint32_t rw_flag;
+    const ble_service_access_node_t access_node;
+};
+
+struct ble_char_node
+{
+    const struct ble_custom_service_config *config;
+    struct rt_ble_device ble;
+};
+
+static const struct ble_custom_service_config BLE_SERVIE_CONFIG[] =
+{
+	{
+		"ble_up_tx", 
+		RT_DEVICE_FLAG_WRONLY, 
+		{RT_NULL,CY_BLE_UNIONPAY_OUT_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE,CY_BLE_UNIONPAY_OUT_CHAR_HANDLE}
+	},
+	{
+		"ble_up_rx", 
+		RT_DEVICE_FLAG_RDONLY, 
+		{RT_NULL,RT_NULL,CY_BLE_UNIONPAY_IN_CHAR_HANDLE}
+	},
+};
+
+static struct ble_char_node ble_service_obj[sizeof(BLE_SERVIE_CONFIG) / sizeof(BLE_SERVIE_CONFIG[0])] = {0};
 //***************************************************************************************************************************
 //function prototype
 //from unionpay.c
@@ -28,6 +72,7 @@ int8_t gatt_write_request(cy_stc_ble_gatt_write_param_t *p)
 	{
 //		LOG_D("Data in %d bytes", p->handleValPair.value.len);
 		cble_data_in(p->handleValPair.value.val, p->handleValPair.value.len);
+//        rt_hw_ble_isr(&(ble_service_obj[BLE_UNIONPAY_RX_INDEX].ble), RT_BLE_EVENT_RX_IND);
 	}
 	else if(p->handleValPair.attrHandle == CY_BLE_UNIONPAY_OUT_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE)
 	{
@@ -139,5 +184,92 @@ int8_t ble_send_indication(cy_stc_ble_conn_handle_t connHandle, cy_ble_gatt_db_a
     }
 
 	return 0;
+}
+//***************************************************************************************************************************
+static rt_err_t cyble_configure(struct rt_ble_device *ble, struct ble_configure *cfg)
+{
+    struct ble_char_node *node;
+    RT_ASSERT(ble != RT_NULL);
+    RT_ASSERT(cfg != RT_NULL);
+
+    node = rt_container_of(node, struct ble_char_node, ble);
+    
+	LOG_D("ble_config[%s]", node->config->name);
+    
+    return RT_EOK;
+}
+//***************************************************************************************************************************
+static rt_err_t cyble_control(struct rt_ble_device *ble, int cmd, void *arg)
+{
+    struct ble_char_node *node;
+
+    RT_ASSERT(ble != RT_NULL);
+    node = rt_container_of(node, struct ble_char_node, ble);
+
+	LOG_D("ble_control[%s]", node->config->name);
+	
+    switch (cmd)
+    {
+    /* disable interrupt */
+    case RT_DEVICE_CTRL_CLR_INT:
+        break;
+    /* enable interrupt */
+    case RT_DEVICE_CTRL_SET_INT:
+        break;
+
+    case RT_DEVICE_CTRL_CONFIG:
+        break;
+    }
+    return RT_EOK;
+}
+//***************************************************************************************************************************
+static int cyble_putc(struct rt_ble_device *ble, char c)
+{
+    struct ble_char_node *node;
+    RT_ASSERT(ble != RT_NULL);
+
+    node = rt_container_of(node, struct ble_char_node, ble);
+	
+    return 1;
+}
+
+static int cyble_getc(struct rt_ble_device *ble)
+{
+    int ch;
+    struct ble_char_node *node;
+    RT_ASSERT(ble != RT_NULL);
+    node = rt_container_of(node, struct ble_char_node, ble);
+
+    ch = -1;
+//    ch = Cy_SCB_UART_Get(uart->config->uart_base);
+    return ch;
+}
+//***************************************************************************************************************************
+static const struct rt_ble_ops cy8c63_ble_ops =
+{
+    .configure = cyble_configure,
+    .control = cyble_control,
+    .putc = cyble_putc,
+    .getc = cyble_getc,
+};
+//***************************************************************************************************************************
+int rt_ble_service_init(void)
+{
+    rt_size_t obj_num = sizeof(ble_service_obj) / sizeof(struct ble_char_node);
+    struct ble_configure config = RT_BLE_CONFIG_DEFAULT;
+    rt_err_t result = 0;
+
+    for (rt_size_t i = 0; i < obj_num; i++)
+    {
+        ble_service_obj[i].config = &BLE_SERVIE_CONFIG[i];
+        ble_service_obj[i].ble.ops    = &cy8c63_ble_ops;
+        ble_service_obj[i].ble.config = config;
+
+		result = rt_hw_ble_register(&ble_service_obj[i].ble, ble_service_obj[i].config->name,
+                                       ble_service_obj[i].config->rw_flag | RT_DEVICE_FLAG_INT_RX | RT_DEVICE_FLAG_INT_TX
+                                       , NULL);
+        RT_ASSERT(result == RT_EOK);
+    }
+    return result;
 }
 //***************************************************************************************************************************
