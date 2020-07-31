@@ -1,5 +1,7 @@
 //by yangwensen@20200729
 #include <rtthread.h>
+#include <rtdevice.h>
+#include "ble_dev.h"
 //#include <project.h>
 
 #define LOG_TAG                         "UP"
@@ -10,30 +12,75 @@
 
 #define MQ_CBLE_RX_NUM					5
 #define MQ_CBLE_RX_BUFF_SIZE			sizeof(struct cble_pack_msg)
-//***************************************************************************************************************************
-rt_mq_t queue_cble_rx;
 
-__packed struct cble_pack_msg
+#define CBLE_RX_DEV_NAME                "ble_up_rx"
+#define CBLE_RX_BUFF_SIZE				200
+//***************************************************************************************************************************
+static struct rt_semaphore rx_sem;
+static rt_device_t cble_rx_device = RT_NULL;
+static uint8_t cble_rx_buff[CBLE_RX_BUFF_SIZE];
+//***************************************************************************************************************************
+//function prototype
+//***************************************************************************************************************************
+//by yangwensen@20200730
+static rt_err_t cble_rx_ind(rt_device_t dev, rt_size_t size)
 {
-	uint8_t size;
-	uint8_t data[CBLE_RX_SIZE];
-};
+    if (size > 0)
+    {
+        rt_sem_release(&rx_sem);
+    }
+    return RT_EOK;
+}
+//***************************************************************************************************************************
+static int cble_rx_init(void)
+{
+    cble_rx_device = rt_device_find(CBLE_RX_DEV_NAME);
+    
+    if(cble_rx_device == RT_NULL )
+    {
+        LOG_E("find device %s failed!", CBLE_RX_DEV_NAME);
+        return -1;
+    }
+	
+    struct ble_configure rx_use_config = 
+    {
+		1000000ul,
+		23,
+        CBLE_RX_BUFF_SIZE, /* Buffer size */
+    };
+    
+    if (RT_EOK != rt_device_control(cble_rx_device, RT_DEVICE_CTRL_CONFIG,(void *)&rx_use_config))
+    {
+        LOG_E("cble rx node config failed.");
+        return -2;
+    }
+    
+    rt_sem_init(&rx_sem, "up_rx_sem", 0, RT_IPC_FLAG_FIFO);
+    
+    if (rt_device_open(cble_rx_device, RT_DEVICE_FLAG_INT_RX) != RT_EOK)
+    {
+        LOG_E("cble rx node open error.");
+        return -3;
+    }    
+    
+    rt_device_set_rx_indicate(cble_rx_device, cble_rx_ind);
+
+	return RT_EOK;
+}
 //***************************************************************************************************************************
 //by yangwensen@20200729
 static void unionpay_rx_thread(void* parameter)
 {
-	struct cble_pack_msg msg;
+    rt_size_t res;
 	
-	LOG_D("unionpay_rx_thread ready");
+	cble_rx_init();
+	
     for (;;)
     {
-	    if( rt_mq_recv(queue_cble_rx, &msg, sizeof(msg), RT_WAITING_FOREVER) != RT_EOK )
-		{
-			LOG_E("rt_mq_recv() Error");
-			continue;
-		}
-		
-		ulog_hexdump("UP Pack", CBLE_RX_SIZE, msg.data, msg.size);
+        rt_sem_take(&rx_sem, RT_WAITING_FOREVER);
+        res = rt_device_read(cble_rx_device, -1, cble_rx_buff, sizeof(cble_rx_buff));
+        
+		ulog_hexdump("UP-PACK", CBLE_RX_SIZE, cble_rx_buff, res);
     }
 }
 //***************************************************************************************************************************
@@ -42,9 +89,7 @@ int cble_init(void)
 {
     rt_thread_t thread;
 
-    queue_cble_rx = rt_mq_create("cble_rx", MQ_CBLE_RX_BUFF_SIZE, MQ_CBLE_RX_NUM, RT_IPC_FLAG_FIFO);
-
-    thread = rt_thread_create("unionpay_rx", unionpay_rx_thread, RT_NULL, 512, 15, 10);
+    thread = rt_thread_create("unionpay_rx", unionpay_rx_thread, RT_NULL, 1024, 15, 10);
 
     if (thread == RT_NULL)
         return RT_ERROR;
@@ -53,6 +98,7 @@ int cble_init(void)
 }
 //***************************************************************************************************************************
 //by yangwensen@20200729
+#if 0
 int8_t cble_data_in(uint8_t *data, uint8_t size)
 {
 	struct cble_pack_msg msg;
@@ -77,4 +123,5 @@ int8_t cble_data_in(uint8_t *data, uint8_t size)
 	
 	return 0;
 }
+#endif
 //***************************************************************************************************************************

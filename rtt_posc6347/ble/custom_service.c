@@ -38,17 +38,26 @@ static const struct ble_custom_service_config BLE_SERVIE_CONFIG[] =
 {
 	{
 		"ble_up_tx", 
-		RT_DEVICE_FLAG_WRONLY, 
+		RT_DEVICE_FLAG_WRONLY|RT_DEVICE_FLAG_INT_TX, 
 		{RT_NULL,CY_BLE_UNIONPAY_OUT_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE,CY_BLE_UNIONPAY_OUT_CHAR_HANDLE}
 	},
 	{
 		"ble_up_rx", 
-		RT_DEVICE_FLAG_RDONLY, 
+		RT_DEVICE_FLAG_RDONLY|RT_DEVICE_FLAG_INT_RX, 
 		{RT_NULL,RT_NULL,CY_BLE_UNIONPAY_IN_CHAR_HANDLE}
 	},
 };
 
 static struct ble_char_node ble_service_obj[sizeof(BLE_SERVIE_CONFIG) / sizeof(BLE_SERVIE_CONFIG[0])] = {0};
+
+//用于模拟蓝牙硬件寄存器
+static struct
+{
+	uint8_t rx_len;
+	uint8_t rd_index;
+	uint8_t rx_buff[20];
+}ble_reg
+ = {0};
 //***************************************************************************************************************************
 //function prototype
 //from unionpay.c
@@ -71,8 +80,11 @@ int8_t gatt_write_request(cy_stc_ble_gatt_write_param_t *p)
 	if(p->handleValPair.attrHandle == CY_BLE_UNIONPAY_IN_CHAR_HANDLE)
 	{
 //		LOG_D("Data in %d bytes", p->handleValPair.value.len);
-		cble_data_in(p->handleValPair.value.val, p->handleValPair.value.len);
-//        rt_hw_ble_isr(&(ble_service_obj[BLE_UNIONPAY_RX_INDEX].ble), RT_BLE_EVENT_RX_IND);
+//		cble_data_in(p->handleValPair.value.val, p->handleValPair.value.len);
+        ble_reg.rd_index = 0;
+        ble_reg.rx_len = p->handleValPair.value.len;
+        rt_memcpy(ble_reg.rx_buff, p->handleValPair.value.val, ble_reg.rx_len);
+        rt_hw_ble_isr(&(ble_service_obj[BLE_UNIONPAY_RX_INDEX].ble), RT_BLE_EVENT_RX_IND);
 	}
 	else if(p->handleValPair.attrHandle == CY_BLE_UNIONPAY_OUT_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE)
 	{
@@ -186,25 +198,27 @@ int8_t ble_send_indication(cy_stc_ble_conn_handle_t connHandle, cy_ble_gatt_db_a
 	return 0;
 }
 //***************************************************************************************************************************
+//by yangwensen@20200730
 static rt_err_t cyble_configure(struct rt_ble_device *ble, struct ble_configure *cfg)
 {
     struct ble_char_node *node;
     RT_ASSERT(ble != RT_NULL);
     RT_ASSERT(cfg != RT_NULL);
 
-    node = rt_container_of(node, struct ble_char_node, ble);
+    node = rt_container_of(ble, struct ble_char_node, ble);
     
 	LOG_D("ble_config[%s]", node->config->name);
     
     return RT_EOK;
 }
 //***************************************************************************************************************************
+//by yangwensen@20200730
 static rt_err_t cyble_control(struct rt_ble_device *ble, int cmd, void *arg)
 {
     struct ble_char_node *node;
 
     RT_ASSERT(ble != RT_NULL);
-    node = rt_container_of(node, struct ble_char_node, ble);
+    node = rt_container_of(ble, struct ble_char_node, ble);
 
 	LOG_D("ble_control[%s]", node->config->name);
 	
@@ -223,28 +237,33 @@ static rt_err_t cyble_control(struct rt_ble_device *ble, int cmd, void *arg)
     return RT_EOK;
 }
 //***************************************************************************************************************************
+//by yangwensen@20200730
 static int cyble_putc(struct rt_ble_device *ble, char c)
 {
     struct ble_char_node *node;
     RT_ASSERT(ble != RT_NULL);
 
-    node = rt_container_of(node, struct ble_char_node, ble);
+    node = rt_container_of(ble, struct ble_char_node, ble);
 	
     return 1;
 }
-
+//***************************************************************************************************************************
+//by yangwensen@20200730
 static int cyble_getc(struct rt_ble_device *ble)
 {
     int ch;
     struct ble_char_node *node;
     RT_ASSERT(ble != RT_NULL);
-    node = rt_container_of(node, struct ble_char_node, ble);
+    node = rt_container_of(ble, struct ble_char_node, ble);
 
     ch = -1;
-//    ch = Cy_SCB_UART_Get(uart->config->uart_base);
+
+	if(ble_reg.rd_index < ble_reg.rx_len)
+		ch = ble_reg.rx_buff[ble_reg.rd_index++];
     return ch;
 }
 //***************************************************************************************************************************
+//by yangwensen@20200730
 static const struct rt_ble_ops cy8c63_ble_ops =
 {
     .configure = cyble_configure,
@@ -253,6 +272,7 @@ static const struct rt_ble_ops cy8c63_ble_ops =
     .getc = cyble_getc,
 };
 //***************************************************************************************************************************
+//by yangwensen@20200730
 int rt_ble_service_init(void)
 {
     rt_size_t obj_num = sizeof(ble_service_obj) / sizeof(struct ble_char_node);
@@ -265,9 +285,7 @@ int rt_ble_service_init(void)
         ble_service_obj[i].ble.ops    = &cy8c63_ble_ops;
         ble_service_obj[i].ble.config = config;
 
-		result = rt_hw_ble_register(&ble_service_obj[i].ble, ble_service_obj[i].config->name,
-                                       ble_service_obj[i].config->rw_flag | RT_DEVICE_FLAG_INT_RX | RT_DEVICE_FLAG_INT_TX
-                                       , NULL);
+		result = rt_hw_ble_register(&ble_service_obj[i].ble, ble_service_obj[i].config->name, ble_service_obj[i].config->rw_flag, NULL);
         RT_ASSERT(result == RT_EOK);
     }
     return result;
