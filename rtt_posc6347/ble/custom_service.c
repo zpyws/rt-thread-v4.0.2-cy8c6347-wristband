@@ -8,6 +8,8 @@
 #define LOG_LVL                         LOG_LVL_DBG
 #include <ulog.h>
 //***************************************************************************************************************************
+#define ARRAY_SIZE(ar)     (sizeof(ar)/sizeof(ar[0]))
+//***************************************************************************************************************************
 enum
 {
 	BLE_UNIONPAY_TX_INDEX = 0,
@@ -71,16 +73,7 @@ int8_t gatt_write_request(cy_stc_ble_gatt_write_param_t *p)
 	if(p==NULL)
 		return -1;
 	
-	if(p->handleValPair.attrHandle == CY_BLE_UNIONPAY_IN_CHAR_HANDLE)
-	{
-//		LOG_D("Data in %d bytes", p->handleValPair.value.len);
-//		cble_data_in(p->handleValPair.value.val, p->handleValPair.value.len);
-        ble_reg.rd_index = 0;
-        ble_reg.rx_len = p->handleValPair.value.len;
-        rt_memcpy(ble_reg.rx_buff, p->handleValPair.value.val, ble_reg.rx_len);
-        rt_hw_ble_isr(&(ble_service_obj[BLE_UNIONPAY_RX_INDEX].ble), RT_BLE_EVENT_RX_IND);
-	}
-	else if(p->handleValPair.attrHandle == CY_BLE_UNIONPAY_OUT_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE)
+	if(p->handleValPair.attrHandle == CY_BLE_UNIONPAY_OUT_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE)
 	{
 		cy_stc_ble_gatts_db_attr_val_info_t dbAttrValInfo = 
         {
@@ -97,6 +90,26 @@ int8_t gatt_write_request(cy_stc_ble_gatt_write_param_t *p)
 			LOG_E("Cy_BLE_GATTS_WriteAttributeValueCCCD() Error: 0x%x", gattErr);
 		}
 	}
+    else
+    {
+        uint8_t i;
+        
+        for(i=0; i<ARRAY_SIZE(BLE_SERVIE_CONFIG); i++)
+        {
+            if(!(ble_service_obj[i].config->rw_flag & RT_DEVICE_FLAG_RDONLY))
+                continue;
+            
+            if(p->handleValPair.attrHandle != ble_service_obj[i].config->access_node.attrHandle)
+                continue;
+            
+//    		LOG_D("Data in %d bytes", p->handleValPair.value.len);
+            
+            ble_reg.rd_index = 0;
+            ble_reg.rx_len = (p->handleValPair.value.len > sizeof(ble_reg.rx_buff)) ? sizeof(ble_reg.rx_buff) : p->handleValPair.value.len;
+            rt_memcpy(ble_reg.rx_buff, p->handleValPair.value.val, ble_reg.rx_len);
+            rt_hw_ble_isr(&(ble_service_obj[i].ble), RT_BLE_EVENT_RX_IND);
+        }
+    }
 //-----------------------------------------------------------------------------------------------------
 	if(gattErr != CY_BLE_GATT_ERR_NONE)
 	{
