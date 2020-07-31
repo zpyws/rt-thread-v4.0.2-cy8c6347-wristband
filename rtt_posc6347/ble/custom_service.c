@@ -10,13 +10,12 @@
 //***************************************************************************************************************************
 enum
 {
-	BLE_UNIONPAY_TX_INDEX,
+	BLE_UNIONPAY_TX_INDEX = 0,
 	BLE_UNIONPAY_RX_INDEX,
 };
 
 typedef struct
 {
-	cy_stc_ble_conn_handle_t connHandle;
 	cy_ble_gatt_db_attr_handle_t cccdHandle;
 	cy_ble_gatt_db_attr_handle_t attrHandle;
 }ble_service_access_node_t;
@@ -38,30 +37,25 @@ static const struct ble_custom_service_config BLE_SERVIE_CONFIG[] =
 {
 	{
 		"ble_up_tx", 
-		RT_DEVICE_FLAG_WRONLY|RT_DEVICE_FLAG_INT_TX, 
-		{RT_NULL,CY_BLE_UNIONPAY_OUT_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE,CY_BLE_UNIONPAY_OUT_CHAR_HANDLE}
+		RT_DEVICE_FLAG_WRONLY, 
+		{CY_BLE_UNIONPAY_OUT_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE,CY_BLE_UNIONPAY_OUT_CHAR_HANDLE}
 	},
 	{
 		"ble_up_rx", 
 		RT_DEVICE_FLAG_RDONLY|RT_DEVICE_FLAG_INT_RX, 
-		{RT_NULL,RT_NULL,CY_BLE_UNIONPAY_IN_CHAR_HANDLE}
+		{RT_NULL,CY_BLE_UNIONPAY_IN_CHAR_HANDLE}
 	},
 };
 
 static struct ble_char_node ble_service_obj[sizeof(BLE_SERVIE_CONFIG) / sizeof(BLE_SERVIE_CONFIG[0])] = {0};
 
-//用于模拟蓝牙硬件寄存器
-static struct
-{
-	uint8_t rx_len;
-	uint8_t rd_index;
-	uint8_t rx_buff[20];
-}ble_reg
- = {0};
+ble_reg_t ble_reg = {0};
 //***************************************************************************************************************************
 //function prototype
 //from unionpay.c
 extern int8_t cble_data_in(uint8_t *data, uint8_t size);
+//from btstack.c
+extern cy_stc_ble_conn_handle_t appConnHandle;
 //***************************************************************************************************************************
 //by yangwensen@20200729
 int8_t gatt_write_request(cy_stc_ble_gatt_write_param_t *p)
@@ -119,22 +113,22 @@ int8_t gatt_write_request(cy_stc_ble_gatt_write_param_t *p)
 }
 //***************************************************************************************************************************
 //by yangwensen@20200730
-int8_t ble_send_notification(cy_stc_ble_conn_handle_t connHandle, cy_ble_gatt_db_attr_handle_t cccdHandle, cy_ble_gatt_db_attr_handle_t attrHandle, uint8_t *buff, uint32_t len)
+static int8_t ble_send_notification(cy_stc_ble_conn_handle_t connHandle, cy_ble_gatt_db_attr_handle_t attrHandle, uint8_t *buff, uint32_t len)
 {
     cy_en_ble_api_result_t apiResult = CY_BLE_SUCCESS;
-    
+#if 0    
     if(Cy_BLE_GetConnectionState(connHandle) < CY_BLE_CONN_STATE_CONNECTED)
     {
 		LOG_E("ble disconnected!");
         return -1;
     }
 	
-    if(CY_BLE_IS_NOTIFICATION_ENABLED(connHandle.attId, cccdHandle))
+    if(!CY_BLE_IS_NOTIFICATION_ENABLED(connHandle.attId, cccdHandle))
 	{
 		LOG_E("notification not enabled");
 		return -2;
 	}
-	
+#endif	
 	while(Cy_BLE_GATT_GetBusyStatus(connHandle.attId) == CY_BLE_STACK_STATE_BUSY)
 	{
 	    Cy_BLE_ProcessEvents();
@@ -159,22 +153,22 @@ int8_t ble_send_notification(cy_stc_ble_conn_handle_t connHandle, cy_ble_gatt_db
 }
 //***************************************************************************************************************************
 //by yangwensen@20200730
-int8_t ble_send_indication(cy_stc_ble_conn_handle_t connHandle, cy_ble_gatt_db_attr_handle_t cccdHandle, cy_ble_gatt_db_attr_handle_t attrHandle, uint8_t *buff, uint32_t len)
+static int8_t ble_send_indication(cy_stc_ble_conn_handle_t connHandle, cy_ble_gatt_db_attr_handle_t attrHandle, uint8_t *buff, uint32_t len)
 {
     cy_en_ble_api_result_t apiResult = CY_BLE_SUCCESS;
-    
+#if 0    
     if(Cy_BLE_GetConnectionState(connHandle) < CY_BLE_CONN_STATE_CONNECTED)
     {
 		LOG_E("ble disconnected!");
         return -1;
     }
 	
-    if(CY_BLE_IS_INDICATION_ENABLED(connHandle.attId, cccdHandle))
+    if(!CY_BLE_IS_INDICATION_ENABLED(connHandle.attId, cccdHandle))
 	{
 		LOG_E("notification not enabled");
 		return -2;
 	}
-	
+#endif	
 	while(Cy_BLE_GATT_GetBusyStatus(connHandle.attId) == CY_BLE_STACK_STATE_BUSY)
 	{
 	    Cy_BLE_ProcessEvents();
@@ -196,6 +190,50 @@ int8_t ble_send_indication(cy_stc_ble_conn_handle_t connHandle, cy_ble_gatt_db_a
     }
 
 	return 0;
+}
+//***************************************************************************************************************************
+//by yangwensen@20200731
+static int8_t ble_send_packet(const ble_service_access_node_t *node, uint8_t *buff, uint8_t len)
+{
+    #define CONN_HANDLE         appConnHandle
+    
+//	ulog_hexdump("[MCU->]", 20, buff, len);
+
+    if(Cy_BLE_GetConnectionState(CONN_HANDLE) < CY_BLE_CONN_STATE_CONNECTED)
+    {
+		LOG_E("ble disconnected!");
+        return -1;
+    }
+
+    if( CY_BLE_IS_NOTIFICATION_SUPPORTED(node->attrHandle) && CY_BLE_IS_NOTIFICATION_ENABLED(CONN_HANDLE.attId, node->cccdHandle) )
+	{
+        LOG_D("ble_send_notification[%d]", len);
+        if( ble_send_notification(CONN_HANDLE, node->attrHandle, buff, len) )
+        {
+            LOG_E("ble_send_notification fail");
+		    return -2;
+        }
+        return len;
+	}
+    
+    if( CY_BLE_IS_INDICATION_SUPPORTED(node->attrHandle) && CY_BLE_IS_INDICATION_ENABLED(CONN_HANDLE.attId, node->cccdHandle) ) 
+	{
+        LOG_D("ble_send_indication[%d]", len);
+        if( ble_send_indication(CONN_HANDLE, node->attrHandle, buff, len) )
+        {
+            LOG_E("ble_send_indication fail");
+		    return -3;
+        }
+        return len;
+	}
+
+    LOG_E("notification & notification not enabled");
+    return 0;
+}
+//***************************************************************************************************************************
+int8_t unionpay_send(uint8_t *buff, uint8_t len)
+{
+    return ble_send_packet(&ble_service_obj[BLE_UNIONPAY_TX_INDEX].config->access_node, buff, len);
 }
 //***************************************************************************************************************************
 //by yangwensen@20200730
@@ -241,10 +279,24 @@ static rt_err_t cyble_control(struct rt_ble_device *ble, int cmd, void *arg)
 static int cyble_putc(struct rt_ble_device *ble, char c)
 {
     struct ble_char_node *node;
+    int8_t res;
     RT_ASSERT(ble != RT_NULL);
 
     node = rt_container_of(ble, struct ble_char_node, ble);
 	
+    ble_reg.tx_buff[ble_reg.wr_index] = c;
+    if( (++ble_reg.wr_index >= sizeof(ble_reg.tx_buff)) || (ble_reg.tx_len==ble_reg.wr_index) )
+    {
+        res = ble_send_packet(&node->config->access_node, ble_reg.tx_buff, ble_reg.wr_index);     //do transmit
+        if(res <= 0)     
+        {
+            LOG_E("cyble send packet fail: %d", res);
+            return 0;
+        }
+        ble_reg.tx_len -= ble_reg.wr_index;
+        ble_reg.wr_index = 0;
+    }
+    
     return 1;
 }
 //***************************************************************************************************************************
@@ -255,7 +307,8 @@ static int cyble_getc(struct rt_ble_device *ble)
     struct ble_char_node *node;
     RT_ASSERT(ble != RT_NULL);
     node = rt_container_of(ble, struct ble_char_node, ble);
-
+    (void)node;
+    
     ch = -1;
 
 	if(ble_reg.rd_index < ble_reg.rx_len)

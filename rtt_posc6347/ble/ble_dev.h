@@ -66,6 +66,18 @@ struct rt_ble_device
 };
 typedef struct rt_ble_device rt_ble_t;
 
+//用于模拟蓝牙硬件寄存器
+typedef struct
+{
+	uint8_t rx_len;
+	uint8_t rd_index;
+	uint8_t rx_buff[20];
+    
+    uint8_t tx_len;
+    uint8_t wr_index;
+    uint8_t tx_buff[20];
+}ble_reg_t;
+
 /**
  * uart operators
  */

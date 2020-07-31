@@ -33,9 +33,14 @@ rt_inline int _ble_poll_rx(struct rt_ble_device *ble, rt_uint8_t *data, int leng
 //****************************************************************************************************************************
 rt_inline int _ble_poll_tx(struct rt_ble_device *ble, const rt_uint8_t *data, int length)
 {
+    extern ble_reg_t ble_reg;
     int size;
     RT_ASSERT(ble != RT_NULL);
 
+    //by yangwensen@20200731
+    ble_reg.tx_len = length;
+    ble_reg.wr_index = 0;
+    
     size = length;
     while (length)
     {

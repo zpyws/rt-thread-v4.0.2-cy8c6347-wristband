@@ -15,12 +15,17 @@
 
 #define CBLE_RX_DEV_NAME                "ble_up_rx"
 #define CBLE_RX_BUFF_SIZE				200
+#define CBLE_TX_DEV_NAME                "ble_up_tx"
 //***************************************************************************************************************************
 static struct rt_semaphore rx_sem;
 static rt_device_t cble_rx_device = RT_NULL;
 static uint8_t cble_rx_buff[CBLE_RX_BUFF_SIZE];
+
+static rt_device_t cble_tx_device = RT_NULL;
 //***************************************************************************************************************************
 //function prototype
+//from custom_service.c
+extern int8_t unionpay_send(uint8_t *buff, uint8_t len);
 //***************************************************************************************************************************
 //by yangwensen@20200730
 static rt_err_t cble_rx_ind(rt_device_t dev, rt_size_t size)
@@ -32,6 +37,7 @@ static rt_err_t cble_rx_ind(rt_device_t dev, rt_size_t size)
     return RT_EOK;
 }
 //***************************************************************************************************************************
+//by yangwensen@20200730
 static int cble_rx_init(void)
 {
     cble_rx_device = rt_device_find(CBLE_RX_DEV_NAME);
@@ -57,7 +63,7 @@ static int cble_rx_init(void)
     
     rt_sem_init(&rx_sem, "up_rx_sem", 0, RT_IPC_FLAG_FIFO);
     
-    if (rt_device_open(cble_rx_device, RT_DEVICE_FLAG_INT_RX) != RT_EOK)
+    if (rt_device_open(cble_rx_device, RT_DEVICE_FLAG_INT_RX|RT_DEVICE_OFLAG_RDONLY) != RT_EOK)
     {
         LOG_E("cble rx node open error.");
         return -3;
@@ -68,19 +74,43 @@ static int cble_rx_init(void)
 	return RT_EOK;
 }
 //***************************************************************************************************************************
+//by yangwensen@20200731
+static int cble_tx_init(void)
+{
+    cble_tx_device = rt_device_find(CBLE_TX_DEV_NAME);
+    
+    if(cble_tx_device == RT_NULL )
+    {
+        LOG_E("find device %s failed!", CBLE_TX_DEV_NAME);
+        return -1;
+    }
+    
+    if (rt_device_open(cble_tx_device, RT_DEVICE_OFLAG_WRONLY) != RT_EOK)
+    {
+        LOG_E("cble rx node open error.");
+        return -3;
+    }    
+    
+	return RT_EOK;
+}
+//***************************************************************************************************************************
 //by yangwensen@20200729
 static void unionpay_rx_thread(void* parameter)
 {
     rt_size_t res;
 	
 	cble_rx_init();
+    cble_tx_init();
 	
     for (;;)
     {
         rt_sem_take(&rx_sem, RT_WAITING_FOREVER);
         res = rt_device_read(cble_rx_device, -1, cble_rx_buff, sizeof(cble_rx_buff));
         
-		ulog_hexdump("UP-PACK", CBLE_RX_SIZE, cble_rx_buff, res);
+		ulog_hexdump("[->MCU]", CBLE_RX_SIZE, cble_rx_buff, res);
+
+        res = rt_device_write(cble_tx_device, -1, cble_rx_buff, res);
+        LOG_D("rt_device_write=%d", res);
     }
 }
 //***************************************************************************************************************************
