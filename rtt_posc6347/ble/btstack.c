@@ -8,6 +8,7 @@
 
 #include <stdlib.h>
 #include "ancsc.h"
+#include "custom_service.h"
 //***************************************************************************************************************************
 #define CY_BLE_CONN_INTRV_TO_MS      (5 / 4)
 //***************************************************************************************************************************
@@ -19,15 +20,13 @@ typedef enum
 } STACK_EV_E;
 
 rt_event_t stack_event;
+rt_event_t gatt_event;
 
 cy_stc_ble_conn_handle_t appConnHandle;
 //***************************************************************************************************************************
 //外部函数
 extern void App_DisplayBondList(void);
 extern bool App_IsDeviceInBondList(uint32_t bdHandle);
-//from custom_servie.c
-extern int8_t gatt_write_request(cy_stc_ble_gatt_write_param_t *p);
-extern int rt_ble_service_init(void);
 //from unionpay.c
 extern int cble_init(void);
 //***************************************************************************************************************************
@@ -87,6 +86,11 @@ void static StackEventHandler(uint32_t event, void *eventParam)
             
         case CY_BLE_EVT_TIMEOUT:
             LOG_E("CY_BLE_EVT_TIMEOUT: 0x%x", (((cy_stc_ble_timeout_param_t *)eventParam)->reasonCode));
+            if( ((cy_stc_ble_timeout_param_t *)eventParam)->reasonCode == CY_BLE_GATT_RSP_TO )
+            {
+                LOG_E("connection handle: %d", ((cy_stc_ble_timeout_param_t *)eventParam)->CY_BLE_HANDLE.connHandle);
+                rt_event_send(stack_event, GATT_EVENT_TIMEOUT);
+            }
             break;
         
         case CY_BLE_EVT_HARDWARE_ERROR:    /* This event indicates that some internal HW error has occurred */
@@ -324,6 +328,7 @@ void static StackEventHandler(uint32_t event, void *eventParam)
 
         case CY_BLE_EVT_GATTS_HANDLE_VALUE_CNF:
             LOG_D("CY_BLE_EVT_GATTS_HANDLE_VALUE_CNF");
+            rt_event_send(gatt_event, GATT_EVENT_INDICATION);
             break;
 
     /**********************************************************
@@ -440,7 +445,8 @@ MSH_CMD_EXPORT(ble_rssi, reads Received Signal Strength Indicator (RSSI) );
 static rt_bool_t _stack_init(void)
 {
     stack_event = rt_event_create("stackev", RT_IPC_FLAG_FIFO);
-    if (!stack_event)
+    gatt_event = rt_event_create("gattev", RT_IPC_FLAG_FIFO);
+    if (!stack_event || !gatt_event)
     {
         LOG_E("sem create failure");
         return RT_FALSE;

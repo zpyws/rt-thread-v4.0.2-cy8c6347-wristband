@@ -7,6 +7,8 @@
 #define LOG_TAG                         "GATT"
 #define LOG_LVL                         LOG_LVL_DBG
 #include <ulog.h>
+
+#include "custom_service.h"
 //***************************************************************************************************************************
 #define ARRAY_SIZE(ar)     (sizeof(ar)/sizeof(ar[0]))
 //***************************************************************************************************************************
@@ -169,6 +171,8 @@ static int8_t ble_send_notification(cy_stc_ble_conn_handle_t connHandle, cy_ble_
 static int8_t ble_send_indication(cy_stc_ble_conn_handle_t connHandle, cy_ble_gatt_db_attr_handle_t attrHandle, uint8_t *buff, uint32_t len)
 {
     cy_en_ble_api_result_t apiResult = CY_BLE_SUCCESS;
+    rt_uint32_t event = 0;
+    rt_err_t error;
 #if 0    
     if(Cy_BLE_GetConnectionState(connHandle) < CY_BLE_CONN_STATE_CONNECTED)
     {
@@ -201,8 +205,27 @@ static int8_t ble_send_indication(cy_stc_ble_conn_handle_t connHandle, cy_ble_ga
         LOG_E("Cy_BLE_GATTS_Notification API Error: 0x%x", apiResult);
 		return -3;
     }
+//-----------------------------------------------------------------------------------------------------------------
+    error = rt_event_recv(gatt_event, GATT_EVENT_INDICATION | GATT_EVENT_TIMEOUT, RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR, 200, &event);
+    if(error != RT_EOK)
+    {
+        LOG_E("rt_event_recv() timeout or error");
+        return -4;
+    }
+    
+    if(event & GATT_EVENT_TIMEOUT)
+    {
+        LOG_E("wait indication confirm timeouted");
+        return -5;
+    }
+    
+    if(event & GATT_EVENT_INDICATION)
+    {
+        LOG_D("gatt indication confirmed");
+        return 0;
+    }
 
-	return 0;
+    return -6;
 }
 //***************************************************************************************************************************
 //by yangwensen@20200731
